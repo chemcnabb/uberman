@@ -1,0 +1,23 @@
+.ctas {
+	.button_text:last-child {
+		margin-right: 0;
+	}
+	@media #{$small-up} {
+		.button_text {
+			font-size: 11px;
+		}
+	}
+
+	@media #{$medium-up} {
+
+	}
+
+	@media #{$large-up} {
+
+	}
+
+	@media #{$xlarge-up} {
+
+	}
+
+}

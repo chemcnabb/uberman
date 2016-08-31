@@ -1,0 +1,325 @@
+
+
+
+section.allVehicles {
+  background: white;
+  position: relative;
+
+  .title {
+	  width: 300px;
+	  display: block;
+	  text-align: center;
+	  margin: auto;
+
+	  @media #{$medium-up}{
+		  width: 300px;
+	  }
+
+	  @media #{$large-up}{
+		  display: inline-block;
+		  float: left;
+	  }
+  }
+
+  .sub-nav-container {
+	  width: 320px;
+	  display: block;
+	  margin: auto;
+
+	  @media #{$medium-only}{
+		  width: 450px;
+
+		  &:lang(fr){
+			  width: 600px;
+		  }
+	  }
+
+	  @media #{$large-up}{
+		  width: 450px;
+		  display: inline-block;
+		  float: right;
+
+		  &:lang(fr){
+			  width: 600px;
+			  display: inline-block;
+			  float: right;
+		  }
+	  }
+  }
+
+  span {
+	  display: inline-block;
+	  height:48px;
+//	  padding-right: 28px;
+	  position: relative;
+
+	  a.infobox {
+		  position: absolute;
+		  width:20px;
+		  height: 20px;
+		  right: 0;
+		  top: 3px;
+		  background: url('/static/vector/infoicon.svg') no-repeat center right;
+		  @include hide-text;
+		  margin: 0;
+
+		  &:hover,&:focus{
+			  opacity: 0.5;
+		  }
+	  }
+
+  }
+
+
+  h1 {
+	font-family: 'Knockout 27 A', 'Knockout 27 B', Helvetica, Arial, sans-serif;
+	text-transform: uppercase;
+	margin: 0;
+	text-align: center;
+	padding-bottom: 20px;
+
+	@media #{$medium-only} {
+	  font-size: 42px;
+	  line-height: 42px;
+	  text-align: center;
+	}
+	@media #{$large-up} {
+	  font-size: 42px;
+	  line-height: 42px;
+	  margin-bottom: 40px;
+	  text-align: left;
+	}
+  }
+
+  div.vehicleNav {
+	width: 50%;
+	right: 0;
+	top: 44px;
+	text-align: center;
+	display: inline;
+	position: none;
+	justify-content: space-between;
+
+
+	@media #{$medium-only} {
+	  display: inline-block;
+	  text-align: right;
+	  position: absolute;
+	}
+
+	@media #{$large-up} {
+	  text-align: right;
+	  display: inline-block;
+	  position: absolute;
+	}
+
+	li {
+	  display: inline;
+
+		a {
+		  display: inline-block;
+		  margin: 0 12px;
+		  color: black;
+		  border-color: black;
+		  font-size: 11px;
+
+		  @media #{$large-up} {
+			  margin: 0 24px;
+			  font-size: 18px;
+			  line-height: 18px;
+		  }
+
+		}
+	}
+
+  }
+
+  div.vehicle {
+	position: relative;
+	font-size: 0;
+
+	@media #{$medium-up}{
+	  	text-align: left;
+	}
+
+	div.years {
+	  padding-bottom: 8px;
+	  display: block;
+
+	  @media #{$medium-up} {
+		position: relative;
+		left: 50%;
+	  }
+
+	  @media #{$large-up} {
+		  display: inline-block;
+	  }
+
+	  a {
+		display: inline-block;
+		color: #a8a8a8;
+		font-size: 21px;
+		border-bottom: solid 2px #a8a8a8;
+		line-height: 21px;
+		font-family: 'Knockout 27 A', 'Knockout 27 B', Helvetica, Arial, sans-serif;
+		margin-right: 14px;
+
+		@media #{$medium-only} {
+		  font-size: 26px;
+		  line-height: 26px;
+		}
+
+		@media #{$large-up} {
+		  font-size: 36px;
+		  line-height: 36px;
+		  border-width: 4px;
+		}
+
+		&.highlight {
+		  color: black;
+		  border-bottom: solid 2px black;
+
+		  @media #{$large-up} {
+			border-width: 4px;
+		  }
+		}
+	  }
+	}
+
+	div.car {
+	  display: none;
+
+	  &.open {
+		display: block;
+	  }
+
+	  div.image {
+		box-sizing: border-box;
+		display: block;
+		width: 100%;
+		opacity: 0;
+		@include transition(opacity 0.3s, transform 0.3s);
+		@include transform(translateX(0px) scale(1.1));
+
+		@media #{$medium-up} {
+		  display: inline-block;
+		  width: 50%;
+		  @include transform(translateX(-30px) scale(1));
+		}
+
+		&.reveal {
+		  opacity: 1;
+		  @include transform(translateX(0px) scale(1));
+		}
+
+		img {
+		  width: 100%;
+		  height: auto;
+		}
+	  }
+
+	  div.copy {
+		box-sizing: border-box;
+		display: block;
+		width: 100%;
+
+		@media #{$medium-up} {
+		  display: inline-block;
+		  vertical-align: top;
+		  width: 50%;
+		  padding-right: 0;
+		}
+
+		ul.features {
+		  font-size: 11px;
+		  line-height: 15px;
+		  padding-bottom: 20px;
+		  display: block;
+
+
+		  @media #{$medium-up} {
+			font-size: 16px;
+			line-height: 20px;
+			display: block;
+		  }
+
+		  @media #{$large-up} {
+			font-size: 16px;
+			line-height: 20px;
+			padding-bottom: 100px;
+		  }
+		}
+
+		div.ctas {
+			div {
+				display: block;
+				margin-bottom: 4px;
+
+				@media #{$medium-up} {
+					display: block;
+					margin-right: 24px;
+					margin-bottom: 10px;
+
+					&:last-of-type {
+						margin: 0;
+					}
+
+				}
+
+			  	@media #{$large-only} {
+				  	display: inline-block;
+				  	vertical-align:top;
+					margin-right: 24px;
+			  	}
+
+			  	@media #{$large-up}{
+				  	&:lang(fr){
+					  	width: 180px;
+					}
+				}
+
+			  	@media #{$xlarge-up} {
+				  	display: inline-block;
+				  	vertical-align:top;
+					margin-right: 28px;
+			  	}
+
+			}
+
+		  	a {
+
+			  	font-size: 13px;
+			  	line-height: 20px;
+			  	display: inline-block;
+
+			  	@media #{$medium-up}{
+				  	font-size: 17px;
+				  	line-height: 22px;
+				}
+
+			  	@media #{$large-only} {
+					font-size: 18px;
+				  	line-height: 24px;
+			  	}
+
+			  	@media #{$xlarge-up} {
+				  	line-height: 28px;
+					font-size: 20px;
+			  	}
+
+			  	@media #{$xxlarge-up} {
+					font-size: 22px;
+					&:lang(fr){
+						font-size: 20px;
+					}
+			  	}
+
+			}
+
+		}
+
+	  }
+	}
+  }
+
+}

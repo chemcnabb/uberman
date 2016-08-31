@@ -1,0 +1,400 @@
+	section.homePromos {
+		position: relative;
+
+		div.promos {
+			margin: 0;
+
+			a.promo {
+				height: auto;
+				background: #ccc;
+				box-sizing: border-box;
+				position: relative;
+				color: white;
+				padding: 0;
+				overflow: hidden;
+				display: block;
+				height: 100%;
+				color: white;
+				background-size: cover;
+				background-position: center center;
+				background-repeat: no-repeat;
+				max-height: 400px;
+
+				img {
+					display: block;
+					width: 100%;
+					height: auto;
+					opacity: 0;
+				}
+
+				h2 {
+					color: white;
+					font-size: 21px;
+					line-height: 21px;
+					text-align: center;
+					padding: 10px;
+					margin: 0;
+
+					@media #{$medium-up} {
+						font-size: 24px;
+					}
+				}
+
+				div.caption {
+					position: absolute;
+					width: 100%;
+					height: 20%;
+					bottom: 0px;
+					text-transform: uppercase;
+					@include background( linear-gradient( to top, rgba(22,21,23,0.4), rgba(22,21,23,0.0) ) );
+					@include transition( all 0.3s ease );
+					opacity: 1;
+					font-family: 'Knockout 27 A', 'Knockout 27 B', Helvetica, Arial, sans-serif;
+
+					h2 {
+						position: absolute;
+						bottom: 0;
+						width: 100%;
+						vertical-align: baseline;
+
+						@media #{$large-up} {
+							font-size: 42px;
+							line-height: 36px;
+							padding-bottom: 30px;
+						}
+					}
+				}
+
+				div.overlay {
+					position: absolute;
+					top: 0px;
+					width: 100%;
+					height: 100%;
+					background: rgba(0,0,0,0.8);
+					text-align: center;
+					@include transition( all 0.5s ease );
+					box-sizing: border-box;
+					padding: 0 30px;
+					display: block;
+					opacity: 0;
+
+					&:lang(fr) {
+						padding: 0 20px;
+					}
+
+					div.vcentercontainer {
+						display: table;
+						height: 100%;
+						width: 100%;
+					}
+
+
+					div.vcenter {
+						display: table-cell;
+						vertical-align: middle;
+
+						h2 {
+							font-family: 'Knockout 27 A', 'Knockout 27 B', Helvetica, Arial, sans-serif;
+							@include transition( all 0.5s ease );
+							text-transform: uppercase;
+
+							@media #{$large-up} {
+								font-size: 42px;
+								line-height: 42px;
+								padding-bottom: 30px;
+								@include transform( translateX(50px) );
+								opacity: 0;
+
+								&:lang(fr) {
+									padding-bottom: 20px;
+								}
+							}
+						}
+
+						p {
+							max-width: 360px;
+							font-size: 16px;
+							margin: auto;
+							@include transition( all 0.5s ease );
+
+
+							@media #{$large-up} {
+								font-size: 16px;
+								line-height: 24px;
+								@include transform( translateX(-50px) );
+								opacity: 0;
+
+								&:lang(fr) {
+									font-size: 15px;
+								}
+							}
+
+						}
+
+						span {
+							display: inline-block;
+							border-bottom: solid 2px white;
+							text-transform: uppercase;
+							padding-top: 10px;
+							@include transition( all 0.65s ease );
+
+							@media #{$large-up} {
+								padding-top: 20px;
+								font-size: 16px;
+								line-height: 24px;
+								opacity: 0;
+								@include transform( translateX(-150px) );
+							}
+
+						}
+					}
+				}
+
+				@media #{$large-up} {
+					&:hover,&:focus {
+						div.overlay {
+							top:0%;
+							opacity: 1;
+
+							div.vcenter {
+								h2 {
+									opacity: 1;
+									@include transform( translateX(0px) );
+								}
+
+								p {
+									opacity: 1;
+									@include transform( translateX(0px) );
+								}
+
+								span {
+									opacity: 1;
+									@include transform( translateX(0px) );
+								}
+							}
+						}
+
+						div.caption {
+							@include transform( translateX(40px) );
+							opacity: 0;
+						}
+					}
+				}
+
+			}
+		}
+	}
+
+
+	section.findADealer {
+		position: relative;
+		font-size: 0;
+		background: white;
+		overflow: hidden;
+
+		@media #{$large-up} {
+			height: 340px;
+		}
+
+		div.map.find-dealer {
+			display: none;
+			width: 40%;
+			height: 100%;
+			vertical-align: top;
+			background-image: 	url('/static/vector/map_wedge.svg'),
+								url('/static/images/home/map_homepage.jpg');
+			background-repeat: no-repeat, no-repeat;
+			background-position: right center,right center;
+
+			@media #{$large-up} {
+				display: inline-block;
+			}
+
+
+			@media #{$xxlarge-up} {
+				width: 48%;
+				background-position: right center,right center;
+			}
+		}
+
+      div.map.test-drive {
+			display: none;
+			width: 40%;
+			height: 100%;
+			vertical-align: top;
+			background-image: 	url('/static/vector/map_wedge.svg'),
+								url('/static/images/home/evo_citystreet.jpg');
+			background-repeat: no-repeat, no-repeat;
+			background-position: right center,right center;
+
+			@media #{$large-up} {
+				display: inline-block;
+			}
+
+
+			@media #{$xxlarge-up} {
+				width: 48%;
+				background-position: right center,right center;
+			}
+		}
+        div.copy.test-drive {
+
+          @media #{$large-up} {
+				padding: 100px 40px;
+				font-size: 42px;
+//				line-height: 48px;
+				width: 60%;
+			}
+
+			@media #{$xxlarge-up} {
+				width: 50%;
+				background-position: left center;
+			}
+        }
+		div.copy {
+
+			display: inline-block;
+			width: 100%;
+			right: 0;
+			bottom: 00px;
+			padding: 30px 20px;
+			font-size: 24px;
+			box-sizing: border-box;
+			text-align: center;
+			text-transform: uppercase;
+
+			@media #{$large-up} {
+				padding: 30px 30px ;
+				font-size: 42px;
+				line-height: 48px;
+				width: 60%;
+			}
+
+			@media #{$xxlarge-up} {
+				width: 50%;
+				background-position: left center;
+			}
+
+			h2 {
+				color: black;
+				font-size: 21px;
+				line-height: 24px;
+				font-family: 'Knockout 27 A', 'Knockout 27 B', Helvetica, Arial, sans-serif;
+
+				@media #{$medium-only} {
+					font-size: 42px;
+					line-height: 48px;
+				}
+
+				@media #{$large-up} {
+					font-size: 42px;
+					line-height: 48px;
+				}
+
+				span {
+					color: black;
+					font-size: 32px;
+					line-height: 24px;
+					display: block;
+					font-family: 'Knockout 69 A', 'Knockout 69 B', Helvetica, Arial, sans-serif;
+
+					@media #{$medium-only} {
+						font-size: 64px;
+						line-height: 48px;
+					}
+
+					@media #{$large-up} {
+						font-size: 64px;
+						line-height: 48px;
+					}
+
+				}
+			}
+
+          h2.intro-heading {
+            color: black;
+            font-size: 21px;
+            line-height: 24px;
+            font-family: 'Knockout 27 A', 'Knockout 27 B', Helvetica, Arial, sans-serif;
+
+            @media #{$medium-only} {
+              font-size: 42px;
+              line-height: 21px;
+            }
+
+            @media #{$large-up} {
+              font-size: 42px;
+              line-height: 14px;
+            }
+          }
+
+          h2.vehicle-heading{
+            color: $mitsuRed;
+            font-size: 48px;
+            line-height: 1;
+            font-family: $heading-font-stack;
+            text-transform: uppercase;
+            @media #{$large-up} {
+                font-size: 64px;
+            }
+          }
+
+			a {
+
+				@media #{$small-only} {
+					&:lang(fr) {
+						font-size: 16px;
+					}
+				}
+
+				@media #{$medium-up} {
+					display: inline-block;
+				}
+			}
+
+			input[type="text"] {
+				margin: 15px 0;
+				width: 100%;
+				border: solid 1px #d2d2d2;
+				font-size: 11px;
+				color: black;
+				border-radius: 10px;
+				background: url('/static/vector/search_input_icon.svg') no-repeat 98% center;
+				background-size: 20px;
+				line-height: 34px;
+				padding: 0 14px;
+              height:33px;
+
+				@media #{$medium-only} {
+					margin: 22px 0;
+					width: 60%;
+					margin: 30px auto;
+					background-size: 35px;
+                  height:35px;
+                  font-size:11px;
+				}
+
+				@media #{$large-up} {
+					width: 90%;
+					font-size: 22px;
+					line-height: 64px;
+					background-size: 30px;
+                  height:66px;
+				}
+			}
+
+			a.button {
+				padding: 10px 30px;
+				font-size: 17px;
+				line-height: 17px;
+
+
+				@media #{$large-up} {
+					font-size: 34px;
+					line-height: 34px;
+				}
+			}
+
+		}
+
+	}

@@ -1,0 +1,97 @@
+div.searchContainer {
+
+    h2 {
+        font-size: 26px;
+        font-family: 'Knockout 27 A', 'Knockout 27 B', Helvetica, Arial, sans-serif;
+        color: rgb(0,0,0);
+        text-transform: uppercase;
+        line-height: 26px;
+
+        @media #{$medium-up} {
+            font-size: 28px;
+            line-height: 28px;
+
+        }
+
+        @media #{$large-up} {
+            font-size: 42px;
+            line-height: 42px;
+        }
+
+        
+    }
+
+    h6 {
+        font-size: 16px;
+        font-family: 'Proxima Nova', Helvetica, Arial, sans-serif;
+        color: rgb(0,0,0);
+        line-height: 1.2;
+        margin-bottom: 20px;
+
+        @media #{$large-up} {
+            font-size: 22px;
+        }
+    }
+
+
+    .search_title {
+        margin-top: 30px;
+        margin-bottom: 30px;
+    }
+
+
+    div.result {
+        margin-bottom: 60px;
+
+        a {
+            color: black;
+        }
+
+        p {
+            line-height: 23px;
+            margin-bottom: 24px;
+        }
+    }
+
+    .page_selector {
+        text-align: center;
+        font-size: 16px;
+        font-family: 'Proxima Nova', Helvetica, Arial, sans-serif;
+        color: rgb(0,0,0);
+        margin-bottom: 30px;
+
+    }
+
+    .vehicle-results {
+        display: flex;
+        justify-content: space-around;
+    }
+
+    .vehicle-results-item {
+        text-align: center;
+    }
+
+    .page_numbers {
+        display: inline;
+
+        li {
+            display: inline;
+        }
+    }
+
+    .page_direction {
+        display: inline;
+        font-family: $copy-font-stack-bold;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .result-image {
+        width:100%;
+        display: inline-block;
+    }
+
+    .result-text {
+        display:inline-block;
+    }
+}

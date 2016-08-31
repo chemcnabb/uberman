@@ -1,0 +1,231 @@
+@import "_showroom";
+@import "_about";
+
+nav.warranty {
+   @extend nav.showroom;
+}
+
+div.warrantyContainer {
+    .plan-header {
+        padding-top: 15%;
+        padding-bottom: 15%;
+    }
+
+    .plan-heading {
+        font-size: 60px;
+        font-family: 'Knockout 27 A', 'Knockout 27 B', Helvetica, Arial, sans-serif;
+        color: rgb(255,255,255);
+        text-transform: uppercase;
+        line-height: 50px;
+        width:auto;
+
+        &.diamond {
+            font-size: 40px;
+
+            @media #{$large-up} {
+                font-size: 90px;
+                line-height: 80px;
+            }
+        }
+
+        @media #{$large-up} {
+            font-size: 110px;
+            line-height: 80px;
+        }
+    }
+
+    .plan-sub-heading {
+        font-size: 21px;
+        font-family: 'Knockout 27 A', 'Knockout 27 B', Helvetica, Arial, sans-serif;
+        color: rgb(255,255,255);
+        text-transform: uppercase;
+        line-height: 21px;
+
+        @media #{$large-up} {
+            font-size: 42px;
+            line-height: 42px;
+        }
+    }
+
+    .plan-content {
+        position:absolute;
+        top: 50%;
+        right: 0;
+        @include transform( translateY(-50%));
+
+        &.diamond {
+            margin-left: 2%;
+            left: 0;
+        }
+    }
+
+    .planImage {
+        min-height: 150px;
+        width: 100%;
+        height: 100%;
+        background-color: #FF2702;
+        position: relative;
+
+        @media #{$large-up} {
+            min-height: 300px;
+        }
+    }
+
+    .plan-with-img {
+        width: 100%;
+        height: auto;
+        vertical-align: middle;
+        position: relative;
+
+        img {
+            width: 100%;
+        }
+
+    }
+
+    .img-heading {
+        position:absolute;
+        right: 5%;
+        top: 50%;
+        @include transform( translateY(-50%));
+    }
+
+    .large-img {
+        display: none;
+
+        @media #{$medium-only} {
+            display: block;
+        }
+
+        @media #{$large-up} {
+            display: block;
+        }
+    }
+
+    .small-img {
+        display: block;
+        width: 100%;
+        height: auto;
+
+        @media #{$medium-up} {
+            display: none;
+        }
+
+        @media #{$large-up} {
+            display:none;
+        }
+    }
+
+    ul {
+        padding-top: 0;
+    }
+
+    .content-heading {
+        padding-top: 0;
+    }
+
+    .eligibleVehicles_list {
+        li {
+            display: inline-block;
+            text-align: center;
+        }
+    }
+
+    .eligible_vehicle {
+        width: 88%;
+    }
+
+    h2 {
+        span {
+            display: inline-block;
+            height:22px;
+            padding-right: 28px;
+            position: relative;
+
+            a.infobox {
+                position: absolute;
+                width:20px;
+                height: 20px;
+                right: 0;
+                top: 0;
+                background: url('/static/vector/infoicon.svg') no-repeat center right;
+                @include hide-text;
+                margin: 0;
+
+                @media #{$medium-only} {
+                    top: 15%
+                }
+
+                @media #{$large-up} {
+                    top: 50%;
+                }
+
+                &:hover,&:focus{
+                    opacity: 0.5;
+                }
+            }
+        }
+    }
+
+    h6 {
+        font-size: 11px;
+        font-family: ProximaNova-Bold, Helvetica, Arial, sans-serif;
+        color: rgb(0,0,0);
+        line-height: 1.2;
+
+        @media #{$large-up} {
+            line-height: 27px;
+            font-size: 16px;
+        }
+    }
+
+    section.overview {
+
+        .hero-image {
+            @media #{$medium-up} {
+                overflow: hidden;
+                background-color: black;
+            }
+
+            img {
+                position: relative;
+                width:100%;
+
+                @media #{$medium-up} {
+                    position: absolute;
+                    width: auto;
+                }
+
+            }
+
+        }
+
+        .overview_info {
+            @media #{$medium-up} {
+                float: none;
+                padding-top: 3%;
+                padding: 3% 28px 0 28px;
+            }
+        }
+    }
+
+    /*TEMPORARY OVERLAY */
+
+    .banner-gradient {
+        position: relative;
+        display: inline-block;
+        float: left;
+        width: 100%;
+
+        &:after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+            display: inline-block;
+            @include background(linear-gradient(to right, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.6) 80%));
+        }
+    }
+}

@@ -1,0 +1,482 @@
+section.home {
+
+	section.hero {
+		position: relative;
+		overflow: hidden;
+
+		div.vehicleHighlightContainer {
+			min-height: 360px;
+			max-height: 360px;
+			position: relative;
+			background-color: white;
+
+			@media #{$medium-only} {
+				min-height: 496px;
+				max-height: 568px;
+			}
+
+			@media #{$large-up} {
+				min-height: 496px;
+				max-height: 668px;
+			}
+		}
+
+		div.vehicleHighlight {
+			position: absolute;
+			overflow:hidden;
+			height: 100%;
+			top: 0;
+			left: 0;
+			width: 100%;
+			visibility: hidden;
+			opacity: 0;
+			@include transition( all 0.5s ease 0.3s );
+
+			&.visible {
+				visibility: visible;
+				opacity: 1;
+			}
+
+			div.bgimage {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				z-index: 3;
+				background-position: center center;
+				background-repeat: no-repeat;
+				background-size: cover;
+				height: 100%;
+
+				@media #{$large-up} {
+					background-position: center center;
+				}
+			}
+
+			div.tint {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				z-index: 4;
+				opacity: 0.7;
+				height: 100%;
+			}
+
+			div.wedge {
+				position: absolute;
+				z-index: 5;
+				height: 600px;
+				bottom: -240px;
+				right: -2500px;
+				width: 4000px;
+				background: white;
+				@include transform( translate(1500px,500px) rotate(-23deg) scale(1) );
+				@include transition( transform 0.8s 0.2s );
+				//display: none;
+
+				@media #{$medium-only} {
+					height: 600px;
+					bottom: 0px;
+					right: -2500px;
+					width: 4000px;
+				}
+
+				@media #{$large-up} {
+					height: 600px;
+					bottom: 0px;
+					right: -2500px;
+					width: 4000px;
+				}
+
+				&.selected {
+					@include transform( translate(0px,0px) rotate(-23deg) scale(1) );
+				}
+
+				&.out {
+					@include transform( translate(-2500px,-500px) rotate(-23deg) scale(1) );
+				}
+
+				@media #{$large-up} {
+
+				}
+			}
+
+			div.car {
+				position: absolute;
+				z-index: 6;
+				height: 100%;
+				bottom: -2px;
+				right: -1px;
+				width: 100%;
+				top:0;
+				@include transition( transform 0.7s 0.3s );
+
+				div.disclaimer {
+					font-size: 10px;
+					color:black;
+					position: absolute;
+					z-index: 7;
+					opacity: 0;
+					right: 40px;
+					bottom: 40px;
+					@include transition( opacity 0.3s 1.0s );
+				}
+
+
+				&.selected {
+
+					@media #{$medium-only} {
+
+					}
+
+					@media #{$large-up} {
+
+					}
+
+					img {
+						opacity: 1;
+						@include transform( translateX(0px) scale(1) );
+					}
+
+					div.disclaimer {
+						opacity: 1;
+					}
+
+
+				}
+
+				&.out {
+					background-size: 500%;
+
+					img {
+						opacity: 0;
+						@include transition-delay(0.1s);
+						@include transform( translateX(0px) scale(1.05) );
+					}
+
+					div.disclaimer {
+						@include transition-delay(0.1s);
+						opacity: 0;
+					}
+
+				}
+
+				img {
+					position: absolute;
+					bottom:10px;
+					right:0;
+					width: 86%;
+					height: auto;
+					max-width: 450px;
+					padding: 0;
+					opacity: 0;
+					@include transition( opacity 0.4s 0.5s, transform 0.4s 0.5s );
+					@include transform( translateX(0px) scale(1.1) );
+
+
+					@media #{$medium-only} {
+						width: 100%;
+						max-width: 600px;
+					}
+
+					@media #{$large-only} {
+						width: 62%;
+						max-width: 800px;
+						padding: 0 0 0px 0px;
+					}
+
+					@media #{$xlarge-up} {
+						width: 90%;
+						max-width: 750px;
+						padding: 0 0 0px 0px;
+						bottom:0;
+					}
+
+
+				}
+			}
+
+			div.copy {
+				z-index: 5;
+				color:white;
+				position: absolute;
+				top: 8%;
+				width: 100%;
+				padding: 0 20px;
+
+				@media #{$medium-only} {
+					width: 80%;
+					top: 20%;
+				}
+
+				@media #{$large-up} {
+					padding: 0px;
+					width: 60%;
+					top: 20%;
+					left: 30px;
+				}
+
+				h1,h2,p,a {
+					@include transition( transform 0.5s, opacity 0.3s );
+					@include transform( translateX(-80px) );
+					opacity: 0;
+				}
+
+
+				&.selected {
+					z-index: 7;
+
+					h1,h2,p,a {
+						@include transform( translateX(0px) );
+						opacity: 1;
+					}
+
+					a:hover,a:focus {
+						//@include transition-delay( 0s );
+						//@include transform( translateY(-3px) );
+					}
+				}
+
+				h1 {
+					font-size: 32px;
+					line-height: 26px;
+					margin: 0;
+					text-transform: uppercase;
+					margin-bottom: 6px;
+					font-family: 'Knockout 68 A', 'Knockout 68 B', Helvetica, Arial, sans-serif;
+					letter-spacing: 0.02em;
+					@include transition-delay(0.3s);
+
+					@media #{$medium-only} {
+						width: 80%;
+						font-size: 46px;
+						line-height: 36px;
+					}
+
+					@media #{$large-up} {
+						margin-bottom: 10px;
+						width: 100%;
+						font-size: 64px;
+						line-height: 48px;
+					}
+
+				}
+
+				h2 {
+					font-size: 21px;
+					line-height: 16px;
+					margin: 0;
+					text-transform: uppercase;
+					font-family: 'Knockout 27 A', 'Knockout 27 B', Helvetica, Arial, sans-serif;
+					@include transition-delay(0.2s);
+
+					@media #{$medium-only} {
+						width: 80%;
+						font-size: 30px;
+						line-height: 26px;
+					}
+
+					@media #{$large-up} {
+						width: 70%;
+						font-size: 42px;
+						line-height: 34px;
+					}
+
+				}
+
+
+				p {
+					font-size: 11px;
+					line-height: 16px;
+					@include transition-delay(0.4s);
+
+					@media #{$medium-only} {
+						font-size: 14px;
+						line-height: 20px;
+					}
+
+					@media #{$large-up} {
+						font-size: 16px;
+						line-height: 24px;
+					}
+
+					&.price {
+
+
+						@media #{$medium-only} {
+							font-size: 18px;
+							line-height: 18px;
+						}
+
+						@media #{$large-up} {
+							padding-top: 13px;
+							font-size: 22px;
+							line-height: 22px;
+						}
+					}
+
+					&.description {
+						max-width: 280px;
+						padding-top: 10px;
+
+						@media #{$medium-only} {
+							max-width: 320px;
+						}
+
+						@media #{$large-up} {
+							max-width: 400px;
+							padding-top: 4px;
+							font-size: 16px;
+							line-height: 24px;
+						}
+
+					}
+
+
+				}
+
+				a.button_text {
+					display: inline-block;
+					padding-top: 14px;
+					@include transition-delay(0.5s);
+
+					@media #{$medium-only} {
+
+					}
+
+					@media #{$large-up} {
+						padding-top: 18px;
+					}
+
+				}
+
+			}
+
+
+		}
+
+		div.indicator {
+			position: absolute;
+			top:0px;
+			width: 35px;
+			height: 12px;
+			z-index: 100;
+			left:0;
+			fill: #eee;
+			@include transition( transform 0.5s ease );
+		}
+
+		div.vehicles {
+			height: auto;
+			width: 100%;
+			overflow:hidden;
+			position: relative;
+			padding-top: 12px;
+			margin-top: -24px;
+			margin-bottom: -15px;
+			z-index: 10;
+
+			@media #{$medium-only} {
+			}
+
+			@media #{$large-up} {
+				margin-bottom: 0px;
+			}
+
+			div.scroll {
+				overflow: scroll;
+				-webkit-overflow-scrolling: touch;
+				white-space:nowrap;
+
+				@media #{$large-up} {
+					overflow: hidden;
+				}
+			}
+
+			ul {
+				font-size: 0;
+				min-width:1060px;
+				position: relative;
+				padding-top: 12px;
+				z-index: 100;
+				height: auto;
+				padding-bottom: 15px;
+
+				@media #{$large-up} {
+					padding-bottom: 0px;
+				}
+
+				li {
+					text-align: center;
+					display: inline-block;
+					vertical-align: top;
+					background-color: white;
+
+					a {
+
+						display: block;
+						height: 100%;
+						padding: 20px 0 10px;
+						color: black;
+						@include transition( background-color 0.7s );
+
+						@media #{$large-up} {
+							padding: 20px 0 16px;
+						}
+
+						img{
+							width: 88%;
+							height: auto;
+							margin: 0 auto;
+							//max-height: 59px;
+
+							@media #{$medium-up} {
+								max-height: none;
+							}
+						}
+
+						&.selected {
+							background-color: #eee;
+
+							h3 {
+								@include transform( translateY(-2px));
+
+								@media #{$large-up} {
+									@include transform( translateY(-4px));
+								}
+							}
+						}
+
+						&:hover {
+							background-color: #eee;
+
+							h3 {
+								@include transform( translateY(-3px));
+
+								@media #{$large-up} {
+									@include transform( translateY(-6px));
+								}
+							}
+						}
+
+					}
+
+
+
+				}
+
+			}
+		}
+
+
+	}
+
+
+
+
+
+
+
+
+}

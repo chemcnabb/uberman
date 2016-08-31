@@ -1,0 +1,51 @@
+div.bnp_trimselector {
+	background: white;
+	position: relative;
+	padding: 13px 13px 0 13px;
+
+	@media #{$large-up} {
+		padding: 26px 26px 0 26px;
+	}
+
+	h2 {
+		font-size: 21px;
+		line-height: 21px;
+		font-family: 'Knockout 27 A', 'Knockout 27 B', Helvetica, Arial, sans-serif;
+		text-transform: uppercase;
+
+		@media #{$large-up} {
+			font-size: 42px;
+			line-height: 42px;
+		}
+	}
+
+
+	p {
+		font-size: 11px;
+		line-height: 17px;
+		max-width: 580px;
+
+		@media #{$large-up} {
+			font-size: 16px;
+			line-height: 22px;
+		}
+
+	}
+
+	a {
+		position: absolute;
+		top: 13px;
+		right: 13px;
+		font-size: 11px;
+		line-height: 17px;
+
+		@media #{$large-up} {
+			top: 26px;
+			right: 26px;
+			font-size: 21px;
+			line-height: 21px;
+		}
+	}
+
+
+}

@@ -1,0 +1,336 @@
+div.infoOverlay div.infoContainer--offers {
+	height: auto;
+	.legal {
+		padding-right: 5%;
+	}
+}
+.text-center {
+	text-align: center;
+}
+.text-right {
+	text-align: right;
+}
+
+.text-left {
+  	text-align: left;
+}
+
+.rebate-content {
+	p:first-child {
+		text-transform: uppercase;
+		margin-bottom: 10px;
+	}
+}
+
+
+.vehicle-heading-stacked {
+	vertical-align: bottom;
+	display: inline-block;
+	font-family: $sub-heading-font-stack;
+	font-size: 24px;
+	@media #{$large-up} {
+		font-size: 32px;
+	}
+	
+	line-height: .9;
+	margin-bottom: 2px;
+}
+.vehicle-sub-heading {
+	padding:0 !important;
+	margin-bottom: 20px;
+	font-size: 16px;
+	.info-circle {
+		margin-top: -2px;
+	}
+
+	@media #{$large-up} {
+		font-size: 22px;
+		.info-circle {
+			margin-top: 0px;
+		}
+	}
+}
+
+.heading-inline {
+	display: inline-block;
+	margin-right: 4px;
+}
+
+//.detail-value is used for the red numerical values on each page. It has two modifiers, inline and large.
+.detail-value {
+	font-family: $sub-heading-font-stack;
+	font-size: 22px;
+	sup {
+		font-size: 58%;
+	}
+
+	@media #{$medium-up} {
+		font-size: 26px;
+	}
+	@media #{$large-up} {
+		font-size: 40px;
+	}
+}
+
+.detail-value--inline {
+	display: inline;
+}
+
+.detail-value--large {
+	font-size: 36px;
+	@media #{$medium-up} {
+		font-size: 40px;
+	}
+	@media #{$large-up} {
+		font-size: 64px;
+	}
+}
+
+.detail-pull-right {
+	position: absolute;
+	bottom: 2px;
+	right: 4%;
+}
+
+.details {
+	margin-bottom: 30px;
+	small {
+		display: block;
+		margin-top: 10px;
+	}
+
+}
+
+#rebates {
+	background:white;
+	.heading-2 {
+		display: inline-block;
+	}
+	.hidden-content {
+		display: none;
+	}
+	p {
+		margin-bottom: 20px;
+		line-height: 1.3;
+	}
+
+	.column:nth-child(3), .column:nth-child(5){
+		clear:both;
+	}
+	@media #{$large-up} {
+		.column:nth-child(3), .column:nth-child(5) {
+			clear:none;
+		}
+		.column:nth-child(4){
+			clear:both;
+		}
+	}
+	.column:last-child {
+		float: left;
+	}
+}
+.rebates-img {
+	margin: 20px 0;
+}
+
+section.rebates {
+	@media #{$large-up} {
+		padding-top:60px;
+	}
+}
+
+section.request_rebates {
+  background: white;
+  position: relative;
+  padding-top: 40px;
+  padding-bottom: 36px;
+
+  h1 {
+    font-family: 'Knockout 27 A', 'Knockout 27 B', Helvetica, Arial, sans-serif;
+    text-transform: uppercase;
+    margin: 0;
+    font-size: 42px;
+    line-height: 42px;
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+  a {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+}
+
+div.offers, section.rebates {
+	background: white;
+	padding-top: 50px;
+
+	@media #{$medium-only} {
+		padding-top: 30px;
+	}
+
+	@media #{$large-up} {
+		padding-top: 70px;
+	}
+
+	.include {
+		margin-bottom: 20px;
+	}
+	.has-tip {
+		border-bottom: 1px solid;
+		line-height: 1.3;
+	}
+	.has-tip:hover {
+		color: #333;
+		opacity: .8;
+	}
+	.tooltip {
+		background: #eee;
+		color: #666;
+	}
+	.moreInfo {
+		display: block;
+		position: relative;
+
+		  a.infobox {
+			  position: relative;
+			  width:20px;
+			  height: 20px;
+			  right: -5px;
+			  top: -3px;
+			  background: url('/static/vector/infoicon.svg') no-repeat center right;
+			  @include hide-text;
+			  margin: 0;
+				display: inline-block;
+				vertical-align: top;
+
+			  @media #{$large-up} {
+				top: 0px;
+			  }
+
+			  &:hover,&:focus{
+				  opacity: 0.5;
+			  }
+		  }
+
+	}
+	.specialsAnchor {
+		position: relative;
+		top: -100px;
+
+		@media#{$large-up}{
+			top: -200px;
+		}
+	}
+	.details {
+		.moreInfo {
+			position: relative;
+			display: inline;
+		}
+		.infobox {
+			
+			@media#{$small-only}{
+				width: 12px;
+				height: 12px;
+				background-size: cover;
+				margin-left: 4px;
+			}
+		}
+	}
+	p.lead {
+		text-transform: uppercase;
+		margin-bottom: 20px;
+	}
+	span {
+		display: inline;
+		height: auto;
+		padding:0;
+		position:static;
+	}
+	.fs-reset {
+		font-size:12px;
+	}
+
+	.vehicle {
+		margin-bottom: 40px;
+		background:white;
+	}
+	
+	.vehicle-description {
+		font-size: 12px;
+		line-height: 1.5;
+		margin-bottom: 20px;
+	}
+	
+	
+	.detail-heading {
+		padding:0 !important;
+		margin-bottom: 4px;
+		font-family: ProximaNova-Bold, sans-serif;
+	}
+	
+	.ctas--offers {
+		margin-bottom: 24px;
+		@media #{$large-up} {
+			margin-bottom: 48px;
+		}
+	}
+	
+	.ctas a:last-child {
+		margin-right: 0 !important;
+	}
+
+	//iPhone 6
+	@media only screen and (min-width: 23em){
+
+		.detail-value {
+			font-size: 26px;
+		}
+		.detail-value--large {
+			font-size: 42px;
+		}
+		.fs-reset {
+			font-size: 14px;
+		}
+	}
+
+	@media only screen and (min-width: 48em) {
+		.vehicle .car .image {
+			margin-top: 20px;
+		}
+	}
+	@media only screen and (min-width: 62.0625em) {
+		.fs-reset {
+			font-size:18px;
+		}
+		
+		.details {
+			margin-bottom: 40px;
+		}
+		.detail-heading {
+			padding:0 !important;
+		}
+		.detail-value {
+			font-size: 40px;
+		}
+		.detail-value--large {
+			font-size: 64px;
+		}
+		
+		.vehicle {
+			margin-bottom: 0px;
+		}
+		.vehicle-description {
+			font-size: 16px;	
+		}
+		.detail-pull-right {
+    		right: 8%;
+		}
+		
+	}
+
+	@media only screen and (min-width: 64em) {
+		.detail-pull-right {
+    		right: 12%;
+		}
+	}
+}

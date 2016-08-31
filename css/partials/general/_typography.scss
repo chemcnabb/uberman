@@ -1,0 +1,45 @@
+//General Typography
+.heading-2 {
+	font-size: 35px;
+	font-family: $sub-heading-font-stack;
+	text-transform: uppercase;
+	margin-top: 10px;
+	margin-bottom: 20px;
+  	line-height: 35px;
+	@media #{$large-up} {
+		font-size: 42px;
+	  line-height: 42px;
+	}
+
+}
+.heading-3 {
+	text-transform: uppercase;
+}
+
+//Vehicle Specific Typography
+.vehicle-heading, #showroom-vehicle-heading {
+	font-size: 48px;
+	line-height: 1;
+	font-family: $heading-font-stack;
+	text-transform: uppercase;
+	@media #{$large-up} {
+		font-size: 64px;
+	}
+}
+
+.foot-notes {
+    font-size: 9px;
+    line-height: 16px;
+
+    @media #{$large-up}{
+        font-size: 14px;
+        line-height: 20px;
+    }
+    ol {
+        list-style: decimal inside;
+    }
+}
+
+.branduncap {
+    text-transform: none;
+}

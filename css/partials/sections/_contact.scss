@@ -1,0 +1,86 @@
+.heading-bold {
+    font-family: $copy-font-stack-bold;
+    line-height: 18px;
+    @media #{$large-up}{
+        line-height: 24px;
+    }
+}
+
+.contactContainer {
+    .hero-image {
+        position: relative;
+
+        img {
+            width: 100%;
+        }
+    }
+
+    .contact_overview_info {
+        position: absolute;
+        margin-top: 20%;
+
+        @media #{$medium-up}{
+            margin-top: 10%;
+        }
+    }
+
+    .content-padding {
+        padding-bottom: 20px;
+
+        @media #{$large-up}{
+            padding-bottom: 50px;
+        }
+    }
+
+    .socialContainer {
+        text-align: center;
+
+        @media #{$large-up}{
+            text-align: left;
+        }
+    }
+
+    div.social {
+        margin-top: 10px;
+        margin-bottom: 20px;
+        text-align: center;
+        width: 100%;
+
+        @media #{$medium-up} {
+            margin-top: 30px;
+            width: auto;
+            text-align: left;
+        }
+
+        a {
+            display: inline-block;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: solid 1px black;
+            margin: 0 14px 10px;
+            background-size: 22px;
+            background-repeat: no-repeat;
+            background-position: center center;
+
+            &:hover, &:focus {
+                opacity: 0.7;
+            }
+
+            &.facebook {
+                background-image: url('/static/vector/social_facebook_dark.svg');
+            }
+            &.twitter {
+                background-image: url('/static/vector/social_twitter_dark.svg');
+            }
+            &.instagram {
+                background-image: url('/static/vector/social_instagram_dark.svg');
+            }
+            &.youtube {
+                background-image: url('/static/vector/social_youtube_dark.svg');
+            }
+
+
+        }
+    }
+}

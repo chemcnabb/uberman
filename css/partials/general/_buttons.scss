@@ -1,0 +1,495 @@
+
+
+/* MAIN NAV BUTTON STYLE ---- START > */
+.main_nav_button {
+	font-size: 21px;
+	line-height: 60px;
+	color: black;
+	text-transform: uppercase;
+	display: inline-block;
+	padding: 0 12px;
+	width: 100%;
+	box-sizing: border-box;
+	letter-spacing: 0.03em;
+
+	@media #{$medium-only} {
+		width: 92%;
+		font-size: 21px;
+		padding: 0 20px;
+		line-height: 60px;
+	}
+
+	@media #{$large-up} {
+		line-height: 100px;
+		margin: 0 5px;
+		height: 100%;
+		position: relative;
+		padding: 0;
+		font-size:30px;
+		margin: 0 14px;
+		@include transition( opacity 0.3s, transform 0.3s, line-height 0.2s );
+
+		&.condensed {
+			&:after {
+				top: 50px;
+			}
+		}
+
+		&:before {
+			box-sizing: border-box;
+		}
+
+		&:after {
+			box-sizing: border-box;
+			position: absolute;
+			top: 70px;
+			left: 0;
+			width: 100%;
+			height: 1px;
+			background: black;
+			content: '';
+			opacity: 0;
+			@include transition( height 0.3s, opacity 0.3s, transform 0.3s );
+			@include transform( translateY(-6px) );
+		}
+
+		&.selected {
+			&:after {
+				height: 5px;
+				opacity: 1;
+				@include transform( translateY(-2px) );
+			}
+
+			&:hover::after,
+			&:focus::after {
+				@include transform( translateY(0px) );
+			}
+
+		}
+
+		&:hover::after,
+		&:focus::after {
+			height: 5px;
+			opacity: 1;
+			@include transform( translateY(-2px) );
+		}
+
+	}
+
+	@media #{$xlarge-up} {
+		font-size:34px;
+		margin: 0 22px;
+	}
+
+	@media #{$medium-up} {
+		width: auto;
+	}
+
+
+	&:lang(fr) {
+
+		@media #{$large-up} {
+			font-size: 26px;
+		}
+
+		@media #{$xlarge-up} {
+			margin: 0 18px;
+			font-size: 32px;
+		}
+
+
+	}
+
+
+}
+/* MAIN NAV BUTTON STYLE ---- END < */
+
+/* SUB NAV BUTTON STYLE ---- START > */
+.sub_nav_button {
+
+	color: #535353;
+	text-transform: uppercase;
+	display: inline-block;
+	line-height: 18px;
+	font-size: 21px;
+	border: none;
+	position: relative;
+
+	/*@media #{$large-up} {
+		&:hover {
+			border-bottom: solid 4px #737373;
+		}
+	}*/
+
+	&.selected {
+		border-bottom: solid 2px;
+		color: black;
+
+		@media #{$large-up} {
+			border-width: 0px;
+
+			&:after {
+				height: 4px;
+				opacity: 1;
+				@include transition( height 0.3s, opacity 0.3s, transform 0.3s );
+				@include transform( translateY(-2px) );
+			}
+
+			&:hover::after,
+			&:focus::after {
+				height: 4px;
+				-webkit-transform: translateY(-1px);
+				-moz-transform: translateY(-1px);
+				@include transform( translateY(-1px) );
+			}
+
+		}
+	}
+
+	&.highlighted {
+		color: $mitsuRed;
+
+		&:after {
+			top: 24px;
+			opacity: 1;
+			height: 2px;
+			background-color: $mitsuRed;
+		}
+
+		@media #{$large-up} {
+
+			&:after {
+				top: 34px;
+				height: 4px;
+			}
+
+		}
+
+	}
+
+	@media #{$large-up} {
+		font-size: 28px;
+		line-height: 28px;
+
+		&:lang(fr) {
+			font-size: 26px;
+			line-height: 28px;
+		}
+
+		&:after {
+			box-sizing: border-box;
+			position: absolute;
+			top: 30px;
+			left: 0;
+			width: 100%;
+			height: 1px;
+			background: black;
+			content: '';
+			opacity: 0;
+			@include transition( height 0.3s, opacity 0.3s, transform 0.3s );
+			@include transform( translateY(-6px) );
+		}
+
+		&:hover::after,
+		&:focus::after {
+			height: 4px;
+			opacity: 1;
+			-webkit-transform: translateY(-2px);
+			-moz-transform: translateY(-2px);
+			@include transform( translateY(-2px) );
+		}
+
+	}
+
+	@media #{$xlarge-up} {
+
+		&:lang(fr) {
+			font-size: 28px;
+			line-height: 28px;
+		}
+
+
+	}
+
+
+
+}
+/* SUB NAV BUTTON STYLE ---- END < */
+
+/* GENERAL BUTTON STYLE ---- START > */
+.button {
+	border-radius: 10px;
+	padding: 20px 40px;
+	background-color: $mitsuRed;
+	color: white;
+	display: inline-block;
+	font-family: 'Knockout 27 A', 'Knockout 27 B', Helvetica, Arial, sans-serif;
+
+	@media #{$large-up} {
+		font-size: 34px;
+	}
+
+	&:hover {
+		opacity: 0.5;
+		background-color: $mitsuRed;
+		color: white;
+	}
+
+	&.clear {
+		background:transparent;
+	}
+}
+/* GENERAL BUTTON STYLE ---- END < */
+
+/* TEXT BUTTON 1 STYLE ---- START >
+	> Starts with an underline and underline pushes downward on hover
+	> Highlight/selected is a different colour
+*/
+.button_text {
+	font-size: 17px;
+	line-height: 17px;
+	color:white;
+	text-transform: uppercase;
+	font-weight: 700;
+	font-family: ProximaNova-Bold, sans-serif;
+	letter-spacing: 0.04em;
+	position: relative;
+	@include transition( transform 0.3s, height 0.3s );
+
+	&.dark {
+		color: $mitsuBlack;
+	}
+
+	&.highlight {
+		color: $mitsuRed;
+	}
+
+  	&.normal-text {
+	  	text-transform: none;
+	}
+
+  	&.hero {
+	  	color: black;
+
+	  	@media #{$medium-up}{
+		  	color: white;
+		}
+	}
+
+	&:before {
+		box-sizing: border-box;
+	}
+
+	&:after {
+		box-sizing: border-box;
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		top: 100%;
+		height: 2px;
+		border-bottom: solid 2px;
+		background: attr(data-bgcolor);
+		content: attr(data-bgcolor);
+		left: 0;
+		@include transition( border-width 0.3s, height 0.3s, opacity 0.3s, transform 0.3s );
+		@include transform( translateY(0px) );
+
+		@media #{$medium-only} {
+			height: 3px;
+			border-width: 3px;
+			top: 100%;
+		}
+
+		@media #{$large-up} {
+			height: 4px;
+			border-width: 4px;
+			top: 100%;
+		}
+	}
+
+	@media #{$medium-only} {
+
+	}
+
+	@media #{$large-up} {
+		font-size: 16px;
+		line-height: 24px;
+
+
+		&:hover,
+		&:focus {
+			//@include transform( translateY(-3px) );
+		}
+
+		&:hover::after,
+		&:focus::after {
+			@include transform( translateY(3px) );
+		}
+
+	}
+
+	@media #{$xlarge-up} {
+		font-size: 22px;
+		line-height: 24px;
+	}
+
+	&.wrap {
+
+		&:before {
+			box-sizing: border-box;
+		}
+
+		&:after {
+			box-sizing: border-box;
+			position: static;
+			height: 0px;
+			border-bottom: none;
+			background: none;
+			content: '';
+			left: 0;
+
+			@media #{$medium-only} {
+				height: 0px;
+				border-width: 0px;
+			}
+
+			@media #{$large-up} {
+				height: 0px;
+				border-width: 0px;
+			}
+		}
+
+		&:hover::after,
+		&:focus::after {
+			@include transform( none );
+		}
+
+		span {
+			position: relative;
+
+			&:before {
+				box-sizing: border-box;
+			}
+
+			&:after {
+				box-sizing: border-box;
+				position: absolute;
+				width: 100%;
+				height: 100%;
+				top: 100%;
+				height: 2px;
+				border-bottom: solid 2px;
+				background: attr(data-bgcolor);
+				content: attr(data-bgcolor);
+				left: 0;
+				@include transition( border-width 0.3s, height 0.3s, opacity 0.3s, transform 0.3s );
+				@include transform( translateY(0px) );
+
+				@media #{$medium-only} {
+					height: 3px;
+					border-width: 3px;
+				}
+
+				@media #{$large-up} {
+					height: 4px;
+					border-width: 4px;
+				}
+
+			}
+
+			&:hover::after,
+			&:focus::after {
+				@include transform( translateY(3px) );
+			}
+
+		}
+
+
+	}
+
+
+}
+
+/* TEXT BUTTON 2 STYLE ---- START >
+	> Starts without an underline and an underline appears downward on hover
+	> Highlight/selected has underline that pushes downward on hover
+*/
+
+.button_text2 {
+	font-size: 17px;
+	line-height: 17px;
+	color:white;
+	text-transform: uppercase;
+	font-weight: 700;
+	font-family: ProximaNova-Bold, sans-serif;
+	letter-spacing: 0.04em;
+	position: relative;
+	@include transition( transform 0.3s, height 0.3s );
+
+	&.dark {
+		color: $mitsuBlack;
+	}
+
+	&.selected {
+
+		&:after {
+			opacity: 1;
+		}
+
+		&:hover::after,
+		&:focus::after {
+			@include transform( translateY(3px) );
+		}
+
+	}
+
+	&:after {
+		box-sizing: border-box;
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		top: 100%;
+		height: 2px;
+		opacity: 0;
+		border-bottom: solid 2px;
+		background: attr(data-bgcolor);
+		content: attr(data-bgcolor);
+		left: 0;
+		@include transition( border-width 0.3s, height 0.3s, opacity 0.3s, transform 0.3s );
+		@include transform( translateY(0px) );
+
+		@media #{$medium-only} {
+			height: 3px;
+			border-width: 3px;
+		}
+
+		@media #{$large-up} {
+			height: 4px;
+			border-width: 4px;
+		}
+	}
+
+	@media #{$medium-only} {
+
+	}
+
+	@media #{$large-up} {
+		font-size: 22px;
+		line-height: 24px;
+
+
+		&:hover,
+		&:focus {
+			opacity: 1;
+			//@include transform( translateY(-3px) );
+		}
+
+		&:hover::after,
+		&:focus::after {
+			opacity: 1;
+			@include transform( translateY(3px) );
+		}
+
+	}
+
+}
