@@ -1,5 +1,4 @@
 *.psd
 .idea/
-node_modules/
-bower_components/
+
 
