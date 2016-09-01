@@ -67,7 +67,7 @@ Uberman.Boot.prototype = {
 
 
 
-    back = this.game.add.sprite(this.game.world.centerX-(4267/2), this.game.world.height-2133, 'city_background');
+    back = this.game.add.sprite(this.game.world.centerX-(4267/2), this.game.world.height-2100, 'city_background');
     fore = this.game.add.sprite(this.game.world.centerX-(4267/2), this.game.world.height-2133, 'city_foreground');
 
     var backgroundSprites = [

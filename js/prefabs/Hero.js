@@ -56,16 +56,20 @@ Hero.prototype.alter_movement = function (onGround) {
   this.body.allowRotation = false;
   var pointer = this.game.input.activePointer;
 
-  if (onGround) {
 
+
+  if (onGround) {
+    back.x -= this.body.velocity.x*(0.001);
 
     if (pointer.worldX > this.x) {
       //RIGHT
+
       this.scale.x = 1;
       this.animations.play("alter_walk");
     }
     if (pointer.worldX < this.x) {
-      //RIGHT
+      //LEFT
+
       this.scale.x = -1;
       this.animations.play("alter_walk");
     }
@@ -84,7 +88,12 @@ Hero.prototype.uber_movement = function (onGround) {
   var direction = this.getCardinal(angle, true);
 
 
-  console.log(onGround);
+back.x -= this.body.velocity.x*(0.001);
+  if(!onGround){
+    back.y -= this.body.velocity.y*(0.001);
+  }
+
+
 
 
   switch (direction) {
