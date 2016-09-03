@@ -18,23 +18,27 @@ Uberman.Boot.prototype = {
   preload: function () {
 
 
-
-
+//http://kvazars.com/littera/
+    this.game.load.bitmapFont('font', 'font/font.png', 'font/font.xml');
+    this.game.load.bitmapFont('smallfont', 'font/small_font.png', 'font/small_font.xml');
 
     //this.game.load.image('platform', 'sprites/platform.png');
     this.game.load.image('ground', 'images/ground.gif', 4267, 10);
-    this.game.load.image('city_foreground', 'images/city_foreground.png', 4267, 2133);
-    this.game.load.image('city_background', 'images/city_background.png', 4267, 2133);
+    this.game.load.image('city_foreground', 'images/city_foreground.gif', 4267, 2133);
+    this.game.load.image('city_background', 'images/city_background.gif', 4267, 2133);
     this.game.load.image('cape_streak', 'images/cape_streak.png');
     this.game.load.image('sun', 'images/sun.png');
     this.game.load.image('moon', 'images/moon.png');
-    this.game.load.spritesheet('hero', 'images/uber_sprite.gif', 55, 110, 11);
+    this.game.load.spritesheet('hero', 'images/uber_sprite.gif', 55, 110, 16);
+    this.game.load.image('car', 'images/car.gif', 300, 95);
+    this.game.load.image('car2', 'images/car2.gif', 270, 81);
 
 
   },
 
 
   create: function () {
+
 
     //this.game.physics.startSystem(Phaser.Physics.P2JS);
     this.game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -89,7 +93,19 @@ Uberman.Boot.prototype = {
     this.game.add.existing(this.player);
 
 
+    this.car = this.game.add.sprite(this.game.world.x-300, this.game.world.height-180, 'car');
+    this.car2 = this.game.add.sprite(this.game.world.width+270, this.game.world.height-120, 'car2');
+    this.game.physics.enable(this.car, Phaser.Physics.ARCADE);
+    this.game.physics.enable(this.car2, Phaser.Physics.ARCADE);
+    var car_tween = this.game.add.tween(this.car);
+    var car_tween2 = this.game.add.tween(this.car2);
 
+    car_tween.to({ x: this.game.world.width+this.car.width}, 6000).loop(true);
+    car_tween2.to({ x: this.game.world.x-this.car.width}, 6000).loop(true);
+    car_tween.delay(this.game.rnd.integerInRange(100,10000));
+    car_tween2.delay(this.game.rnd.integerInRange(100,10000));
+    car_tween.start();
+    car_tween2.start();
 
     cursors = this.game.input.keyboard.createCursorKeys();
 
@@ -98,6 +114,7 @@ Uberman.Boot.prototype = {
 
 
   update: function () {
+
 
     this.game.physics.arcade.collide(this.player, platforms);
 
@@ -281,9 +298,14 @@ Hero = function (game, x, y, frame) {
   // initialize your prefab here
   this.frame = 0;
   this.currentState = "uber";
-
-  this.dummy = this.game.add.sprite(0, 0);
-
+  this.isClicked = false;
+  this.sprite_message = "";
+  this.pointerHover = false;
+  //this.dummy = this.game.add.sprite(0, 0);
+  this.inputEnabled = true;
+  this.events.onInputDown.add(this.onSpriteClick, this);
+  this.events.onInputOver.add(this.onSpriteHover, this);
+  this.events.onInputOut.add(this.onSpriteBlur, this);
   this.game.physics.arcade.enable(this);
   this.directions = ["LEFT", "UP_LEFT", "UP", "UP_RIGHT", "RIGHT", "DOWN_RIGHT", "DOWN", "DOWN_LEFT"];
   this.alter_walk = this.animations.add("alter_up", [5], 6, false);
@@ -291,7 +313,7 @@ Hero = function (game, x, y, frame) {
   this.alter_walk = this.animations.add("alter_walk", [5, 6, 7, 8, 9, 10], 6, false);
   this.alter_walk = this.animations.add("alter_stand", [5], 6, false);
   this.alter_walk = this.animations.add("uber_stand", [0], 6, false);
-  this.alter_walk = this.animations.add("uber_walk", [0], 6, false);
+  this.alter_walk = this.animations.add("uber_walk", [11, 12, 13, 14, 15], 6, false);
   this.alter_walk = this.animations.add("fly_side", [3,4], 6, false);
   this.alter_walk = this.animations.add("fly_up", [1,2], 6, true);
   this.alter_walk = this.animations.add("fly_up_diagonal", [3,4], 6, true);
@@ -302,6 +324,8 @@ Hero = function (game, x, y, frame) {
   this.body.fixedRotation = true;
   this.anchor.setTo(0.5, 0.5);
 
+
+
   this.game.camera.follow(this, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
 
 
@@ -311,6 +335,65 @@ Hero.prototype = Object.create(Phaser.Sprite.prototype);
 
 Hero.prototype.constructor = Hero;
 
+
+
+
+
+
+
+Hero.prototype.spriteMessage = function (sprite, message) {
+  if(!this.game.input.activePointer.isDown){
+    this.sprite_message = this.game.add.bitmapText(sprite.x-sprite.body.width*2, sprite.y-sprite.height/2, 'smallfont',message,18);
+    var tween = this.game.add.tween(this.sprite_message).to( { y: (sprite.y-sprite.height/2)-10 }, 200, "Linear", true, -1, -1, true).loop(true);
+
+  }
+
+};
+
+Hero.prototype.onSpriteHover = function (sprite, pointer) {
+  this.pointerHover = true;
+  var message;
+  if(this.currentState == "uber"){
+    message = "[click] Change into Secret Identity!";
+  }else{
+    message = "[click] Change into Uberman!";
+  }
+
+  if(sprite.body.touching.down){
+    this.spriteMessage(sprite, message);
+  }
+
+
+};
+
+Hero.prototype.onSpriteBlur = function (sprite, pointer) {
+  if(this.sprite_message){
+    this.sprite_message.destroy();
+    this.pointerHover = false;
+  }
+
+
+
+};
+
+Hero.prototype.onSpriteClick = function (sprite, pointer) {
+  this.sprite_message.destroy();
+  if(sprite.body.touching.down){
+    if (this.currentState == "uber") {
+      sprite.currentState = "alter";
+      sprite.angle = 0;
+      sprite.animations.play("alter_stand");
+    } else {
+      sprite.currentState = "uber";
+      sprite.animations.play("uber_stand");
+    }
+  }
+
+
+};
+Hero.prototype.onSpriteRelease = function (sprite, pointer) {
+  this.isClicked = false;
+};
 Hero.prototype.getCardinal = function (angle, diagonals) {
 
   if (diagonals) {
@@ -418,6 +501,7 @@ back.x -= this.body.velocity.x*(0.001);
         this.angle = 90;
         this.animations.play("fly_side");
       } else {
+        
         this.angle = 0;
         this.animations.play("uber_walk");
       }
@@ -430,6 +514,7 @@ back.x -= this.body.velocity.x*(0.001);
         this.angle = 135;
         this.animations.play("fly_down_diagonal");
       } else {
+
         this.angle = 0;
         this.animations.play("uber_walk");
       }
@@ -441,6 +526,7 @@ back.x -= this.body.velocity.x*(0.001);
         this.angle = -135;
         this.animations.play("fly_down_diagonal");
       } else {
+
         this.angle = 0;
         this.animations.play("uber_walk");
       }
@@ -455,6 +541,7 @@ back.x -= this.body.velocity.x*(0.001);
         this.animations.play("fly_side");
       } else {
         this.angle = 0;
+
         this.animations.play("uber_walk");
       }
 
@@ -468,33 +555,21 @@ Hero.prototype.isMoving = function () {
   return Phaser.Point.equals(this.body.velocity, new Phaser.Point(0, 0));
 };
 
-Hero.prototype.checkState = function () {
-  var that = this;
-  this.game.input.keyboard.onDownCallback = function (e) {
-    if (e.keyCode == 32 && that.body.touching.down) {
-      if (that.currentState == "uber") {
-        that.currentState = "alter";
-        that.angle = 0;
-        that.animations.play("alter_stand");
-      } else {
-        that.currentState = "uber";
-        that.animations.play("uber_stand");
-      }
-    }
 
-  };
-};
 Hero.prototype.update = function () {
-  this.checkState();
+
   var onGround = this.body.touching.down;
   var direction;
 
   if (this.game.input.activePointer.isDown) {
-    if (this.currentState == "uber") {
-      this.uber_movement(onGround);
-    } else {
-      this.alter_movement(onGround);
+    if(!this.pointerHover){
+      if (this.currentState == "uber") {
+        this.uber_movement(onGround);
+      } else {
+        this.alter_movement(onGround);
+      }
     }
+
   }
   if (!this.game.input.activePointer.justReleased(1) && !this.game.input.activePointer.isDown) {
     this.angle = 0;

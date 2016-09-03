@@ -17,23 +17,27 @@ Uberman.Boot.prototype = {
   preload: function () {
 
 
-
-
+//http://kvazars.com/littera/
+    this.game.load.bitmapFont('font', 'font/font.png', 'font/font.xml');
+    this.game.load.bitmapFont('smallfont', 'font/small_font.png', 'font/small_font.xml');
 
     //this.game.load.image('platform', 'sprites/platform.png');
     this.game.load.image('ground', 'images/ground.gif', 4267, 10);
-    this.game.load.image('city_foreground', 'images/city_foreground.png', 4267, 2133);
-    this.game.load.image('city_background', 'images/city_background.png', 4267, 2133);
+    this.game.load.image('city_foreground', 'images/city_foreground.gif', 4267, 2133);
+    this.game.load.image('city_background', 'images/city_background.gif', 4267, 2133);
     this.game.load.image('cape_streak', 'images/cape_streak.png');
     this.game.load.image('sun', 'images/sun.png');
     this.game.load.image('moon', 'images/moon.png');
-    this.game.load.spritesheet('hero', 'images/uber_sprite.gif', 55, 110, 11);
+    this.game.load.spritesheet('hero', 'images/uber_sprite.gif', 55, 110, 16);
+    this.game.load.image('car', 'images/car.gif', 300, 95);
+    this.game.load.image('car2', 'images/car2.gif', 270, 81);
 
 
   },
 
 
   create: function () {
+
 
     //this.game.physics.startSystem(Phaser.Physics.P2JS);
     this.game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -88,7 +92,19 @@ Uberman.Boot.prototype = {
     this.game.add.existing(this.player);
 
 
+    this.car = this.game.add.sprite(this.game.world.x-300, this.game.world.height-180, 'car');
+    this.car2 = this.game.add.sprite(this.game.world.width+270, this.game.world.height-120, 'car2');
+    this.game.physics.enable(this.car, Phaser.Physics.ARCADE);
+    this.game.physics.enable(this.car2, Phaser.Physics.ARCADE);
+    var car_tween = this.game.add.tween(this.car);
+    var car_tween2 = this.game.add.tween(this.car2);
 
+    car_tween.to({ x: this.game.world.width+this.car.width}, 6000).loop(true);
+    car_tween2.to({ x: this.game.world.x-this.car.width}, 6000).loop(true);
+    car_tween.delay(this.game.rnd.integerInRange(100,10000));
+    car_tween2.delay(this.game.rnd.integerInRange(100,10000));
+    car_tween.start();
+    car_tween2.start();
 
     cursors = this.game.input.keyboard.createCursorKeys();
 
@@ -97,6 +113,7 @@ Uberman.Boot.prototype = {
 
 
   update: function () {
+
 
     this.game.physics.arcade.collide(this.player, platforms);
 
