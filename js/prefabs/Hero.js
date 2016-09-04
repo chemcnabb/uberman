@@ -22,6 +22,7 @@ Hero = function (game, x, y, frame) {
   this.alter_walk = this.animations.add("uber_walk", [11, 12, 13, 14, 15], 6, false);
   this.alter_walk = this.animations.add("fly_side", [3,4], 6, false);
   this.alter_walk = this.animations.add("fly_up", [1,2], 6, true);
+  this.alter_walk = this.animations.add("take_off", [16], 6, true);
   this.alter_walk = this.animations.add("fly_up_diagonal", [3,4], 6, true);
   this.alter_walk = this.animations.add("fly_down_diagonal", [3,4], 6, true);
 
@@ -171,7 +172,9 @@ back.x -= this.body.velocity.x*(0.001);
       if (!onGround) {
         this.animations.play("fly_up");
       } else {
-        this.animations.play("uber_stand");
+        this.animations.play("take_off");
+        //this.animations.currentAnim.onComplete.add(function () {	this.animations.play("fly_up");}, this);
+
       }
 
 
@@ -189,16 +192,35 @@ back.x -= this.body.velocity.x*(0.001);
 
       break;
     case "UP_LEFT":
-      this.angle = -45;
+
       this.scale.x = -1;
-      this.animations.play("fly_up_diagonal");
+      if(!onGround){
+        this.angle = -45;
+        this.animations.play("fly_up_diagonal");
+      }else{
+        this.animations.play("take_off");
+        //this.animations.currentAnim.onComplete.add(function () {
+        //  this.angle = -45;
+        //  this.animations.play("fly_up_diagonal");
+        //}, this);
+      }
+
 
 
       break;
     case "UP_RIGHT":
       this.scale.x = 1;
-      this.angle = 45;
-      this.animations.play("fly_up_diagonal");
+
+      if(!onGround){
+        this.angle = 45;
+        this.animations.play("fly_up_diagonal");
+      }else{
+        this.animations.play("take_off");
+        //this.animations.currentAnim.onComplete.add(function () {
+        //  this.angle = 45;
+        //  this.animations.play("fly_up_diagonal");
+        //}, this);
+      }
 
       break;
     case "RIGHT":

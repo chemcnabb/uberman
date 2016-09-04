@@ -2,6 +2,7 @@ var Uberman = {};
 
 Hero = require('./prefabs/Hero');
 DayCycle = require('./prefabs/DayCycle');
+Car = require('./prefabs/Car');
 
 
 Uberman.Boot = function (game) {
@@ -28,9 +29,10 @@ Uberman.Boot.prototype = {
     this.game.load.image('cape_streak', 'images/cape_streak.png');
     this.game.load.image('sun', 'images/sun.png');
     this.game.load.image('moon', 'images/moon.png');
-    this.game.load.spritesheet('hero', 'images/uber_sprite.gif', 55, 110, 16);
+    this.game.load.spritesheet('hero', 'images/uber_sprite.gif', 55, 110, 17);
     this.game.load.image('car', 'images/car.gif', 300, 95);
     this.game.load.image('car2', 'images/car2.gif', 270, 81);
+    this.game.load.audio('driveby', 'images/car.mp3');
 
 
   },
@@ -92,19 +94,15 @@ Uberman.Boot.prototype = {
     this.game.add.existing(this.player);
 
 
-    this.car = this.game.add.sprite(this.game.world.x-300, this.game.world.height-180, 'car');
-    this.car2 = this.game.add.sprite(this.game.world.width+270, this.game.world.height-120, 'car2');
-    this.game.physics.enable(this.car, Phaser.Physics.ARCADE);
-    this.game.physics.enable(this.car2, Phaser.Physics.ARCADE);
-    var car_tween = this.game.add.tween(this.car);
-    var car_tween2 = this.game.add.tween(this.car2);
+    this.car = new Car(this.game, this.game.world.x-300, this.game.world.height-180, 'car', "RIGHT");
+    this.car4 = new Car(this.game, this.game.world.x-300, this.game.world.height-180, 'car2', "RIGHT");
+    this.car2 = new Car(this.game, this.game.world.width+270, this.game.world.height-120, 'car2', "LEFT");
+    this.car3 = new Car(this.game, this.game.world.width+270, this.game.world.height-120, 'car', "LEFT");
 
-    car_tween.to({ x: this.game.world.width+this.car.width}, 6000).loop(true);
-    car_tween2.to({ x: this.game.world.x-this.car.width}, 6000).loop(true);
-    car_tween.delay(this.game.rnd.integerInRange(100,10000));
-    car_tween2.delay(this.game.rnd.integerInRange(100,10000));
-    car_tween.start();
-    car_tween2.start();
+    this.game.add.existing(this.car);
+    this.game.add.existing(this.car4);
+    this.game.add.existing(this.car2);
+    this.game.add.existing(this.car3);
 
     cursors = this.game.input.keyboard.createCursorKeys();
 

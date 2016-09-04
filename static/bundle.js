@@ -3,6 +3,7 @@ var Uberman = {};
 
 Hero = require('./prefabs/Hero');
 DayCycle = require('./prefabs/DayCycle');
+Car = require('./prefabs/Car');
 
 
 Uberman.Boot = function (game) {
@@ -29,9 +30,10 @@ Uberman.Boot.prototype = {
     this.game.load.image('cape_streak', 'images/cape_streak.png');
     this.game.load.image('sun', 'images/sun.png');
     this.game.load.image('moon', 'images/moon.png');
-    this.game.load.spritesheet('hero', 'images/uber_sprite.gif', 55, 110, 16);
+    this.game.load.spritesheet('hero', 'images/uber_sprite.gif', 55, 110, 17);
     this.game.load.image('car', 'images/car.gif', 300, 95);
     this.game.load.image('car2', 'images/car2.gif', 270, 81);
+    this.game.load.audio('driveby', 'images/car.mp3');
 
 
   },
@@ -93,19 +95,15 @@ Uberman.Boot.prototype = {
     this.game.add.existing(this.player);
 
 
-    this.car = this.game.add.sprite(this.game.world.x-300, this.game.world.height-180, 'car');
-    this.car2 = this.game.add.sprite(this.game.world.width+270, this.game.world.height-120, 'car2');
-    this.game.physics.enable(this.car, Phaser.Physics.ARCADE);
-    this.game.physics.enable(this.car2, Phaser.Physics.ARCADE);
-    var car_tween = this.game.add.tween(this.car);
-    var car_tween2 = this.game.add.tween(this.car2);
+    this.car = new Car(this.game, this.game.world.x-300, this.game.world.height-180, 'car', "RIGHT");
+    this.car4 = new Car(this.game, this.game.world.x-300, this.game.world.height-180, 'car2', "RIGHT");
+    this.car2 = new Car(this.game, this.game.world.width+270, this.game.world.height-120, 'car2', "LEFT");
+    this.car3 = new Car(this.game, this.game.world.width+270, this.game.world.height-120, 'car', "LEFT");
 
-    car_tween.to({ x: this.game.world.width+this.car.width}, 6000).loop(true);
-    car_tween2.to({ x: this.game.world.x-this.car.width}, 6000).loop(true);
-    car_tween.delay(this.game.rnd.integerInRange(100,10000));
-    car_tween2.delay(this.game.rnd.integerInRange(100,10000));
-    car_tween.start();
-    car_tween2.start();
+    this.game.add.existing(this.car);
+    this.game.add.existing(this.car4);
+    this.game.add.existing(this.car2);
+    this.game.add.existing(this.car3);
 
     cursors = this.game.input.keyboard.createCursorKeys();
 
@@ -126,7 +124,7 @@ Uberman.Boot.prototype = {
 };
 
 module.exports = Uberman.Boot;
-},{"./prefabs/DayCycle":4,"./prefabs/Hero":5}],2:[function(require,module,exports){
+},{"./prefabs/Car":4,"./prefabs/DayCycle":5,"./prefabs/Hero":6}],2:[function(require,module,exports){
 var Uberman = {};
 
 
@@ -206,6 +204,62 @@ console.log(size);
 })(size);
 
 },{"./Boot":1,"./Preloader":2}],4:[function(require,module,exports){
+Car = function (game, x, y, frame, direction) {
+  Phaser.Sprite.call(this, game, x, y, frame, 0);
+  this.direction = direction;
+  this.game.physics.enable(this, Phaser.Physics.ARCADE);
+
+
+  this.car_tween = this.game.add.tween(this);
+  this.driveby = this.game.add.audio('driveby');
+  this.start();
+  //this.game.sound.setDecodedCallback([ this.driveby ], this.start, this);
+this.loaded = false;
+
+
+
+
+
+
+
+};
+
+Car.prototype = Object.create(Phaser.Sprite.prototype);
+
+Car.prototype.constructor = Car;
+
+Car.prototype.start = function () {
+  var goal;
+
+  if(this.direction=="LEFT"){
+    goal = this.game.world.x-this.width;
+    this.scale.x = -1;
+  }else{
+    goal = this.game.world.width+this.width;
+    this.scale.x = 1;
+  }
+  this.car_tween.to({ x: goal}, 6000).loop(true);
+
+  this.car_tween.delay(this.game.rnd.integerInRange(100,10000));
+
+  this.car_tween.start();
+  this.loaded = true;
+};
+
+Car.prototype.update = function () {
+  if(this.loaded){
+    //if(this.x-this.width > this.game.camera.x && this.x < this.game.camera.x + this.game.camera.width - this.width){
+    //  this.driveby.play();
+    //}
+  }
+
+};
+
+
+
+
+module.exports = Car;
+},{}],5:[function(require,module,exports){
 DayCycle = function (game, dayLength) {
   this.game = game;
   this.dayLength = dayLength;
@@ -291,7 +345,7 @@ DayCycle.prototype.tweenTint = function (spriteToTween, startColor, endColor, du
 
 
 module.exports = DayCycle;
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 Hero = function (game, x, y, frame) {
   Phaser.Sprite.call(this, game, x, y, 'hero', frame);
 
@@ -316,6 +370,7 @@ Hero = function (game, x, y, frame) {
   this.alter_walk = this.animations.add("uber_walk", [11, 12, 13, 14, 15], 6, false);
   this.alter_walk = this.animations.add("fly_side", [3,4], 6, false);
   this.alter_walk = this.animations.add("fly_up", [1,2], 6, true);
+  this.alter_walk = this.animations.add("take_off", [16], 6, true);
   this.alter_walk = this.animations.add("fly_up_diagonal", [3,4], 6, true);
   this.alter_walk = this.animations.add("fly_down_diagonal", [3,4], 6, true);
 
@@ -465,7 +520,9 @@ back.x -= this.body.velocity.x*(0.001);
       if (!onGround) {
         this.animations.play("fly_up");
       } else {
-        this.animations.play("uber_stand");
+        this.animations.play("take_off");
+        //this.animations.currentAnim.onComplete.add(function () {	this.animations.play("fly_up");}, this);
+
       }
 
 
@@ -483,16 +540,35 @@ back.x -= this.body.velocity.x*(0.001);
 
       break;
     case "UP_LEFT":
-      this.angle = -45;
+
       this.scale.x = -1;
-      this.animations.play("fly_up_diagonal");
+      if(!onGround){
+        this.angle = -45;
+        this.animations.play("fly_up_diagonal");
+      }else{
+        this.animations.play("take_off");
+        //this.animations.currentAnim.onComplete.add(function () {
+        //  this.angle = -45;
+        //  this.animations.play("fly_up_diagonal");
+        //}, this);
+      }
+
 
 
       break;
     case "UP_RIGHT":
       this.scale.x = 1;
-      this.angle = 45;
-      this.animations.play("fly_up_diagonal");
+
+      if(!onGround){
+        this.angle = 45;
+        this.animations.play("fly_up_diagonal");
+      }else{
+        this.animations.play("take_off");
+        //this.animations.currentAnim.onComplete.add(function () {
+        //  this.angle = 45;
+        //  this.animations.play("fly_up_diagonal");
+        //}, this);
+      }
 
       break;
     case "RIGHT":
