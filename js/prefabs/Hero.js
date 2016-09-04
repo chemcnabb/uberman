@@ -12,6 +12,11 @@ Hero = function (game, x, y, frame) {
   this.events.onInputDown.add(this.onSpriteClick, this);
   this.events.onInputOver.add(this.onSpriteHover, this);
   this.events.onInputOut.add(this.onSpriteBlur, this);
+
+
+
+
+
   this.game.physics.arcade.enable(this);
   this.directions = ["LEFT", "UP_LEFT", "UP", "UP_RIGHT", "RIGHT", "DOWN_RIGHT", "DOWN", "DOWN_LEFT"];
   this.alter_walk = this.animations.add("alter_up", [5], 6, false);
@@ -49,26 +54,35 @@ Hero.prototype.constructor = Hero;
 
 
 Hero.prototype.spriteMessage = function (sprite, message) {
+console.log("CALLED SPRITE MESSAGE");
+
+
   if(!this.game.input.activePointer.isDown){
     this.sprite_message = this.game.add.bitmapText(sprite.x-sprite.body.width*2, sprite.y-sprite.height/2, 'smallfont',message,18);
     var tween = this.game.add.tween(this.sprite_message).to( { y: (sprite.y-sprite.height/2)-10 }, 200, "Linear", true, -1, -1, true).loop(true);
 
   }
 
+
 };
 
 Hero.prototype.onSpriteHover = function (sprite, pointer) {
   this.pointerHover = true;
-  var message;
-  if(this.currentState == "uber"){
-    message = "[click] Change into Secret Identity!";
+  if(!this.checkOverlap(this, door)){
+    var message;
+    if(this.currentState == "uber"){
+      message = "[click] Change into Secret Identity!";
+    }else{
+      message = "[click] Change into Uberman!";
+    }
+
+    if(this.body.touching.down){
+      this.spriteMessage(this, message);
+    }
   }else{
-    message = "[click] Change into Uberman!";
+    this.onDoorHover();
   }
 
-  if(sprite.body.touching.down){
-    this.spriteMessage(sprite, message);
-  }
 
 
 };
@@ -76,27 +90,74 @@ Hero.prototype.onSpriteHover = function (sprite, pointer) {
 Hero.prototype.onSpriteBlur = function (sprite, pointer) {
   if(this.sprite_message){
     this.sprite_message.destroy();
-    this.pointerHover = false;
+
+  }
+  this.pointerHover = false;
+
+
+
+};
+Hero.prototype.onDoorClick = function(){
+console.log("DOOR CLICKED");
+
+};
+Hero.prototype.onDoorHover = function(){
+
+  var message;
+  if(this.currentState == "uber"){
+    message = "[click] Change before entering!";
+  }else{
+    message = "[click] Enter Daily Planet!";
+
+  }
+
+
+  this.spriteMessage(this, message);
+
+};
+Hero.prototype.onDoorBlur = function(){
+
+};
+Hero.prototype.switch_char = function(sprite) {
+  if (sprite.body.touching.down) {
+    console.log("ON GROUND");
+    if (sprite.currentState == "uber") {
+      console.log("GOING CLARK");
+      sprite.currentState = "alter";
+      sprite.angle = 0;
+      sprite.animations.play("alter_stand");
+    } else {
+      console.log("GOING UBER");
+      sprite.currentState = "uber";
+      sprite.animations.play("uber_stand");
+    }
+  }
+};
+Hero.prototype.onSpriteClick = function (sprite, pointer) {
+
+    if(this.sprite_message) {
+      this.sprite_message.destroy();
+    }
+
+  if(!this.checkOverlap(this, door)) {
+
+
+    this.switch_char(sprite);
+  }else if(this.currentState != "uber" && this.checkOverlap(this, door)){
+    this.onDoorClick();
+  }else{
+    console.log("SWITCHING");
+    this.switch_char(sprite);
   }
 
 
 
 };
+Hero.prototype.checkOverlap = function (spriteA, spriteB) {
+  var boundsA = spriteA.getBounds();
+  var boundsB = spriteB.getBounds();
 
-Hero.prototype.onSpriteClick = function (sprite, pointer) {
-  this.sprite_message.destroy();
-  if(sprite.body.touching.down){
-    if (this.currentState == "uber") {
-      sprite.currentState = "alter";
-      sprite.angle = 0;
-      sprite.animations.play("alter_stand");
-    } else {
-      sprite.currentState = "uber";
-      sprite.animations.play("uber_stand");
-    }
-  }
-
-
+  return Phaser.Rectangle.intersects(boundsA, boundsB);
 };
 Hero.prototype.onSpriteRelease = function (sprite, pointer) {
   this.isClicked = false;
@@ -156,8 +217,10 @@ Hero.prototype.uber_movement = function (onGround) {
 
 
 back.x -= this.body.velocity.x*(0.001);
+  fade.x -= this.body.velocity.x*(0.0005);
   if(!onGround){
     back.y -= this.body.velocity.y*(0.001);
+    fade.y -= this.body.velocity.y*(0.0005);
   }
 
 
@@ -314,6 +377,8 @@ Hero.prototype.update = function () {
     }
 
   }
+
+  //console.log(this.x, this.y);
 };
 
 

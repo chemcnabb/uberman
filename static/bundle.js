@@ -24,9 +24,12 @@ Uberman.Boot.prototype = {
     this.game.load.bitmapFont('smallfont', 'font/small_font.png', 'font/small_font.xml');
 
     //this.game.load.image('platform', 'sprites/platform.png');
+    this.game.load.image('door', 'images/door.gif', 70, 80);
+    this.game.load.image('orbit', 'images/orbit.png', 4267, 894);
     this.game.load.image('ground', 'images/ground.gif', 4267, 10);
     this.game.load.image('city_foreground', 'images/city_foreground.gif', 4267, 2133);
     this.game.load.image('city_background', 'images/city_background.gif', 4267, 2133);
+    this.game.load.image('city_fade', 'images/city_fade_background.gif', 4267, 2133);
     this.game.load.image('cape_streak', 'images/cape_streak.png');
     this.game.load.image('sun', 'images/sun.png');
     this.game.load.image('moon', 'images/moon.png');
@@ -45,6 +48,11 @@ Uberman.Boot.prototype = {
     //this.game.physics.startSystem(Phaser.Physics.P2JS);
     this.game.physics.startSystem(Phaser.Physics.ARCADE);
     this.game.stage.backgroundColor = '#000';
+
+
+
+
+
     this.game.world.setBounds(0, 0, 4267, 8192);
     dayCycle = new DayCycle(this.game, 60000*5);
 
@@ -52,11 +60,29 @@ Uberman.Boot.prototype = {
     var bgBitMap = this.game.add.bitmapData(this.game.world.width, this.game.world.height);
 
 
-    bgBitMap.ctx.rect(0, 0, this.game.world.width, this.game.world.height);
-    bgBitMap.ctx.fillStyle = '#85b5e1';
-    bgBitMap.ctx.fill();
+    //bgBitMap.ctx.rect(0, 0, this.game.world.width, this.game.world.height);
+    //bgBitMap.ctx.fillStyle = '#85b5e1';
+    //bgBitMap.ctx.fill();
+    //
+    //var backgroundSprite = this.game.add.sprite(0,0, bgBitMap);
 
-    var backgroundSprite = this.game.add.sprite(0,0, bgBitMap);
+
+    var myBitmap = this.game.add.bitmapData(this.game.world.width, this.game.world.height);
+    var grd=myBitmap.context.createLinearGradient(0,0,0,this.game.world.height);
+    grd.addColorStop(0,"black");
+    grd.addColorStop(1,"#85b5e1");
+    myBitmap.context.fillStyle=grd;
+    myBitmap.context.fillRect(0,0,this.game.world.width, this.game.world.height);
+    grd=myBitmap.context.createLinearGradient(0,580,0,this.game.world.height);
+    grd.addColorStop(0,"black");
+    grd.addColorStop(1,"#85b5e1");
+    myBitmap.context.fillStyle=grd;
+    myBitmap.context.fillRect(0,this.game.world.height, this.game.world.width,20);
+    var backgroundSprite = this.game.add.sprite(0, 0, myBitmap);
+
+
+
+
 
 
     platforms = this.game.add.group();
@@ -74,11 +100,14 @@ Uberman.Boot.prototype = {
 
 
 
+    orbit = this.game.add.sprite(this.game.world.centerX-(4267/2), 1835, 'orbit');
+    fade = this.game.add.sprite(this.game.world.centerX-(4267/2), this.game.world.height-3000, 'city_fade');
     back = this.game.add.sprite(this.game.world.centerX-(4267/2), this.game.world.height-2100, 'city_background');
     fore = this.game.add.sprite(this.game.world.centerX-(4267/2), this.game.world.height-2133, 'city_foreground');
 
     var backgroundSprites = [
       {sprite: backgroundSprite, from: 0x1f2a27, to: 0xB2DDC8},
+      {sprite: fade, from: 0x1f2a27, to: 0xB2DDC8},
       {sprite: back, from: 0x1f2a27, to: 0xB2DDC8},
       {sprite: fore, from: 0x2f403b, to: 0x96CCBB}
     ];
@@ -91,7 +120,7 @@ Uberman.Boot.prototype = {
 
     this.player = new Hero(this.game, this.game.world.centerX, this.game.world.height-260, this.game.world.height/2);
 
-    // and add it to the game
+    door = this.game.add.sprite(3751, 7902, 'door');
     this.game.add.existing(this.player);
 
 
@@ -105,11 +134,13 @@ Uberman.Boot.prototype = {
     this.game.add.existing(this.car2);
     this.game.add.existing(this.car3);
 
+
+
+
     cursors = this.game.input.keyboard.createCursorKeys();
 
 
   },
-
 
   update: function () {
 
@@ -360,6 +391,11 @@ Hero = function (game, x, y, frame) {
   this.events.onInputDown.add(this.onSpriteClick, this);
   this.events.onInputOver.add(this.onSpriteHover, this);
   this.events.onInputOut.add(this.onSpriteBlur, this);
+
+
+
+
+
   this.game.physics.arcade.enable(this);
   this.directions = ["LEFT", "UP_LEFT", "UP", "UP_RIGHT", "RIGHT", "DOWN_RIGHT", "DOWN", "DOWN_LEFT"];
   this.alter_walk = this.animations.add("alter_up", [5], 6, false);
@@ -397,26 +433,35 @@ Hero.prototype.constructor = Hero;
 
 
 Hero.prototype.spriteMessage = function (sprite, message) {
+console.log("CALLED SPRITE MESSAGE");
+
+
   if(!this.game.input.activePointer.isDown){
     this.sprite_message = this.game.add.bitmapText(sprite.x-sprite.body.width*2, sprite.y-sprite.height/2, 'smallfont',message,18);
     var tween = this.game.add.tween(this.sprite_message).to( { y: (sprite.y-sprite.height/2)-10 }, 200, "Linear", true, -1, -1, true).loop(true);
 
   }
 
+
 };
 
 Hero.prototype.onSpriteHover = function (sprite, pointer) {
   this.pointerHover = true;
-  var message;
-  if(this.currentState == "uber"){
-    message = "[click] Change into Secret Identity!";
+  if(!this.checkOverlap(this, door)){
+    var message;
+    if(this.currentState == "uber"){
+      message = "[click] Change into Secret Identity!";
+    }else{
+      message = "[click] Change into Uberman!";
+    }
+
+    if(this.body.touching.down){
+      this.spriteMessage(this, message);
+    }
   }else{
-    message = "[click] Change into Uberman!";
+    this.onDoorHover();
   }
 
-  if(sprite.body.touching.down){
-    this.spriteMessage(sprite, message);
-  }
 
 
 };
@@ -424,27 +469,74 @@ Hero.prototype.onSpriteHover = function (sprite, pointer) {
 Hero.prototype.onSpriteBlur = function (sprite, pointer) {
   if(this.sprite_message){
     this.sprite_message.destroy();
-    this.pointerHover = false;
+
+  }
+  this.pointerHover = false;
+
+
+
+};
+Hero.prototype.onDoorClick = function(){
+console.log("DOOR CLICKED");
+
+};
+Hero.prototype.onDoorHover = function(){
+
+  var message;
+  if(this.currentState == "uber"){
+    message = "[click] Change before entering!";
+  }else{
+    message = "[click] Enter Daily Planet!";
+
+  }
+
+
+  this.spriteMessage(this, message);
+
+};
+Hero.prototype.onDoorBlur = function(){
+
+};
+Hero.prototype.switch_char = function(sprite) {
+  if (sprite.body.touching.down) {
+    console.log("ON GROUND");
+    if (sprite.currentState == "uber") {
+      console.log("GOING CLARK");
+      sprite.currentState = "alter";
+      sprite.angle = 0;
+      sprite.animations.play("alter_stand");
+    } else {
+      console.log("GOING UBER");
+      sprite.currentState = "uber";
+      sprite.animations.play("uber_stand");
+    }
+  }
+};
+Hero.prototype.onSpriteClick = function (sprite, pointer) {
+
+    if(this.sprite_message) {
+      this.sprite_message.destroy();
+    }
+
+  if(!this.checkOverlap(this, door)) {
+
+
+    this.switch_char(sprite);
+  }else if(this.currentState != "uber" && this.checkOverlap(this, door)){
+    this.onDoorClick();
+  }else{
+    console.log("SWITCHING");
+    this.switch_char(sprite);
   }
 
 
 
 };
+Hero.prototype.checkOverlap = function (spriteA, spriteB) {
+  var boundsA = spriteA.getBounds();
+  var boundsB = spriteB.getBounds();
 
-Hero.prototype.onSpriteClick = function (sprite, pointer) {
-  this.sprite_message.destroy();
-  if(sprite.body.touching.down){
-    if (this.currentState == "uber") {
-      sprite.currentState = "alter";
-      sprite.angle = 0;
-      sprite.animations.play("alter_stand");
-    } else {
-      sprite.currentState = "uber";
-      sprite.animations.play("uber_stand");
-    }
-  }
-
-
+  return Phaser.Rectangle.intersects(boundsA, boundsB);
 };
 Hero.prototype.onSpriteRelease = function (sprite, pointer) {
   this.isClicked = false;
@@ -504,8 +596,10 @@ Hero.prototype.uber_movement = function (onGround) {
 
 
 back.x -= this.body.velocity.x*(0.001);
+  fade.x -= this.body.velocity.x*(0.0005);
   if(!onGround){
     back.y -= this.body.velocity.y*(0.001);
+    fade.y -= this.body.velocity.y*(0.0005);
   }
 
 
@@ -662,6 +756,8 @@ Hero.prototype.update = function () {
     }
 
   }
+
+  //console.log(this.x, this.y);
 };
 
 
