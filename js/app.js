@@ -8,9 +8,10 @@
  *
  * This source requires Phaser 2.6.1
  */
-var Game = Game || {};
+var Uberman = Uberman || {};
 Boot = require("./Boot");
 Preloader = require("./Preloader");
+Game = require("./Game");
 
 
 
@@ -22,7 +23,7 @@ var size = {
 
 (function (size) {
   // initialize the framework
-console.log(size);
+
   var game = new Phaser.Game(size.width, size.height, Phaser.AUTO, '');
 
 
@@ -33,7 +34,7 @@ console.log(size);
   game.state.add('Boot', Boot);
   game.state.add('Preloader', Preloader);
   //game.state.add('MainMenu', MainMenu);
-  //game.state.add('Game', Game);
+  game.state.add('Game', Game);
   // start the Boot state
   game.state.start('Boot');
 

@@ -1,6 +1,8 @@
 Hero = function (game, x, y, frame) {
   Phaser.Sprite.call(this, game, x, y, 'hero', frame);
 
+  this.originHeight = this.game.world.height;
+  this.isZooming = false;
   // initialize your prefab here
   this.frame = 0;
   this.currentState = "uber";
@@ -13,9 +15,9 @@ Hero = function (game, x, y, frame) {
   this.events.onInputOver.add(this.onSpriteHover, this);
   this.events.onInputOut.add(this.onSpriteBlur, this);
 
+this.zoom_in_on = [];
 
-
-
+this.followedObject = this.body;
 
   this.game.physics.arcade.enable(this);
   this.directions = ["LEFT", "UP_LEFT", "UP", "UP_RIGHT", "RIGHT", "DOWN_RIGHT", "DOWN", "DOWN_LEFT"];
@@ -38,6 +40,7 @@ Hero = function (game, x, y, frame) {
 
 
 
+
   this.game.camera.follow(this, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
 
 
@@ -55,11 +58,13 @@ Hero.prototype.constructor = Hero;
 
 Hero.prototype.spriteMessage = function (sprite, message) {
 console.log("CALLED SPRITE MESSAGE");
+console.log(sprite);
 
 
   if(!this.game.input.activePointer.isDown){
-    this.sprite_message = this.game.add.bitmapText(sprite.x-sprite.body.width*2, sprite.y-sprite.height/2, 'smallfont',message,18);
-    var tween = this.game.add.tween(this.sprite_message).to( { y: (sprite.y-sprite.height/2)-10 }, 200, "Linear", true, -1, -1, true).loop(true);
+    this.sprite_message = this.game.add.bitmapText(sprite.x-sprite.body.width*2, sprite.y-sprite.body.height/2, 'smallfont',message,18);
+
+    var tween = this.game.add.tween(this.sprite_message).to( { y: (sprite.y-sprite.body.height/2)-10 }, 200, "Linear", true, -1, -1, true).loop(true);
 
   }
 
@@ -68,7 +73,7 @@ console.log("CALLED SPRITE MESSAGE");
 
 Hero.prototype.onSpriteHover = function (sprite, pointer) {
   this.pointerHover = true;
-  if(!this.checkOverlap(this, door)){
+  if(!this.checkOverlap(this, this.game.door)){
     var message;
     if(this.currentState == "uber"){
       message = "[click] Change into Secret Identity!";
@@ -97,9 +102,11 @@ Hero.prototype.onSpriteBlur = function (sprite, pointer) {
 
 
 };
-Hero.prototype.onDoorClick = function(){
+Hero.prototype.onDoorClick = function(door){
 console.log("DOOR CLICKED");
 
+this.zoom_in_on = [door.x, door.y];
+  this.followedObject = door;
 };
 Hero.prototype.onDoorHover = function(){
 
@@ -112,7 +119,7 @@ Hero.prototype.onDoorHover = function(){
   }
 
 
-  this.spriteMessage(this, message);
+  this.spriteMessage(this.game.door, message);
 
 };
 Hero.prototype.onDoorBlur = function(){
@@ -139,12 +146,12 @@ Hero.prototype.onSpriteClick = function (sprite, pointer) {
       this.sprite_message.destroy();
     }
 
-  if(!this.checkOverlap(this, door)) {
+  if(!this.checkOverlap(this, this.game.door)) {
 
 
     this.switch_char(sprite);
-  }else if(this.currentState != "uber" && this.checkOverlap(this, door)){
-    this.onDoorClick();
+  }else if(this.currentState != "uber" && this.checkOverlap(this, this.game.door)){
+    this.onDoorClick(this.game.door);
   }else{
     console.log("SWITCHING");
     this.switch_char(sprite);
@@ -351,9 +358,11 @@ Hero.prototype.update = function () {
 
   var onGround = this.body.touching.down;
   var direction;
+if(!this.isZooming) {
+
 
   if (this.game.input.activePointer.isDown) {
-    if(!this.pointerHover){
+    if (!this.pointerHover) {
       if (this.currentState == "uber") {
         this.uber_movement(onGround);
       } else {
@@ -362,6 +371,7 @@ Hero.prototype.update = function () {
     }
 
   }
+
   if (!this.game.input.activePointer.justReleased(1) && !this.game.input.activePointer.isDown) {
     this.angle = 0;
     this.body.velocity.set(0);
@@ -372,13 +382,16 @@ Hero.prototype.update = function () {
       if (onGround) {
         this.animations.play("uber_stand");
       }
-    }else{
+    } else {
       this.animations.stop();
     }
 
   }
+}
 
-  //console.log(this.x, this.y);
+
+
+  //console.log(this.originHeight, this.y);
 };
 
 
