@@ -198,7 +198,7 @@ Hero.prototype.alter_movement = function (onGround) {
 
 
   if (onGround) {
-    back.x -= this.body.velocity.x*(0.001);
+    this.game.back.x -= this.body.velocity.x*(0.001);
 
     if (pointer.worldX > this.x) {
       //RIGHT
