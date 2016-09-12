@@ -34,7 +34,7 @@ HUD.prototype.preload = function () {
 
 HUD.prototype.switchState = function() {
   if (this.player.currentState == "uber") {
-    console.log("SCALE:", this.uber_disk.scale, this.uber_disk.alpha, this.uber_disk.x);
+    //console.log("SCALE:", this.uber_disk.scale, this.uber_disk.alpha, this.uber_disk.x);
     //this.game.add.tween(this.alter_disk).to({alpha:0}, 100, Phaser.Easing.Bounce.InOut, true);
     this.game.add.tween(this.alter_disk.scale).to({x:0, y:0}, 30, Phaser.Easing.Bounce.InOut, true);
     //this.game.add.tween(this.uber_disk).to({alpha:1}, 100, Phaser.Easing.Bounce.InOut, true);

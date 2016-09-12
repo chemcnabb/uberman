@@ -11,6 +11,7 @@
 var Uberman = Uberman || {};
 Boot = require("./Boot");
 Preloader = require("./Preloader");
+MainMenu = require("./MainMenu");
 Game = require("./Game");
 
 
@@ -33,7 +34,7 @@ var size = {
   // add game states
   game.state.add('Boot', Boot);
   game.state.add('Preloader', Preloader);
-  //game.state.add('MainMenu', MainMenu);
+  game.state.add('MainMenu', MainMenu);
   game.state.add('Game', Game);
   // start the Boot state
   game.state.start('Boot');

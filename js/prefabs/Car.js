@@ -32,7 +32,7 @@ Car.prototype.start = function () {
     goal = this.game.world.width+this.width;
     this.scale.x = 1;
   }
-  this.car_tween.to({ x: goal}, 6000).loop(true);
+  this.car_tween.to({ x: goal}, this.game.rnd.integerInRange(5000,7000)).loop(true);
 
   this.car_tween.delay(this.game.rnd.integerInRange(100,10000));
 

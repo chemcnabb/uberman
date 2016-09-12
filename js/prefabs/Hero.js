@@ -26,10 +26,15 @@ this.followedObject = this.body;
   this.alter_walk = this.animations.add("alter_walk", [5, 6, 7, 8, 9, 10], 6, false);
   this.alter_walk = this.animations.add("alter_stand", [5], 6, false);
   this.alter_walk = this.animations.add("uber_stand", [0], 6, false);
-  this.alter_walk = this.animations.add("uber_walk", [11, 12, 13, 14, 15], 6, false);
+  this.alter_walk = this.animations.add("uber_walk", [17, 18, 19, 20, 21, 22], 6, false);
+
+  this.alter_walk = this.animations.add("fly_get_ready", [23], 1, true);
   this.alter_walk = this.animations.add("fly_side", [3,4], 6, false);
-  this.alter_walk = this.animations.add("fly_up", [1,2], 6, true);
-  this.alter_walk = this.animations.add("take_off", [16], 6, true);
+  this.alter_walk = this.animations.add("fly_side_up", [11, 12], 6, true);
+  this.alter_walk = this.animations.add("fly_side_down", [13, 14], 6, true);
+  this.alter_walk = this.animations.add("fly_hover", [1,2], 6, true);
+  this.alter_walk = this.animations.add("fly_up", [15,16], 6, true);
+  this.alter_walk = this.animations.add("fly_down", [15,16], 6, true);
   this.alter_walk = this.animations.add("fly_up_diagonal", [3,4], 6, true);
   this.alter_walk = this.animations.add("fly_down_diagonal", [3,4], 6, true);
 
@@ -57,8 +62,7 @@ Hero.prototype.constructor = Hero;
 
 
 Hero.prototype.spriteMessage = function (sprite, message) {
-console.log("CALLED SPRITE MESSAGE");
-console.log(sprite);
+
 
 
   if(!this.game.input.activePointer.isDown){
@@ -223,15 +227,15 @@ Hero.prototype.uber_movement = function (onGround) {
   var direction = this.getCardinal(angle, true);
 
 
-back.x -= this.body.velocity.x*(0.001);
-  fade.x -= this.body.velocity.x*(0.0005);
+this.game.back.x -= this.body.velocity.x*(0.001);
+  this.game.fade.x -= this.body.velocity.x*(0.0005);
   if(!onGround){
-    back.y -= this.body.velocity.y*(0.001);
-    fade.y -= this.body.velocity.y*(0.0005);
+    this.game.back.y -= this.body.velocity.y*(0.001);
+    this.game.fade.y -= this.body.velocity.y*(0.0005);
   }
 
 
-
+  this.scale.y = 1;
 
   switch (direction) {
 
@@ -242,7 +246,7 @@ back.x -= this.body.velocity.x*(0.001);
       if (!onGround) {
         this.animations.play("fly_up");
       } else {
-        this.animations.play("take_off");
+        this.animations.play("uber_stand");
         //this.animations.currentAnim.onComplete.add(function () {	this.animations.play("fly_up");}, this);
 
       }
@@ -251,11 +255,33 @@ back.x -= this.body.velocity.x*(0.001);
       break;
     case "DOWN":
       this.angle = 0;
-
+      this.scale.y = -1;
 
       if (!onGround) {
-        this.animations.play("fly_up");
+        if(this.y>this.game.world.height-1200){
+
+
+            if(this.animations.currentAnim.name == "fly_down"){
+
+              this.animations.play("fly_get_ready");
+              this.events.onAnimationComplete.add(function() {
+
+                this.scale.y = 1;
+                this.animations.play("fly_hover");
+              }, this);
+
+
+          }else{
+              this.scale.y = 1;
+              this.animations.play("fly_hover");
+          }
+
+
+         }else {
+          this.animations.play("fly_down");
+        }
       } else {
+        this.scale.y = 1;
         this.animations.play("uber_stand");
       }
 
@@ -266,9 +292,9 @@ back.x -= this.body.velocity.x*(0.001);
       this.scale.x = -1;
       if(!onGround){
         this.angle = -45;
-        this.animations.play("fly_up_diagonal");
+        this.animations.play("fly_side_up");
       }else{
-        this.animations.play("take_off");
+        this.animations.play("uber_stand");
         //this.animations.currentAnim.onComplete.add(function () {
         //  this.angle = -45;
         //  this.animations.play("fly_up_diagonal");
@@ -283,7 +309,7 @@ back.x -= this.body.velocity.x*(0.001);
 
       if(!onGround){
         this.angle = 45;
-        this.animations.play("fly_up_diagonal");
+        this.animations.play("fly_side_up");
       }else{
         this.animations.play("take_off");
         //this.animations.currentAnim.onComplete.add(function () {
@@ -310,7 +336,7 @@ back.x -= this.body.velocity.x*(0.001);
       this.scale.x = 1;
       if (!onGround) {
         this.angle = 135;
-        this.animations.play("fly_down_diagonal");
+        this.animations.play("fly_side_down");
       } else {
 
         this.angle = 0;
@@ -322,7 +348,7 @@ back.x -= this.body.velocity.x*(0.001);
       this.scale.x = -1;
       if (!onGround) {
         this.angle = -135;
-        this.animations.play("fly_down_diagonal");
+        this.animations.play("fly_side_down");
       } else {
 
         this.angle = 0;
@@ -378,7 +404,8 @@ if(!this.isZooming) {
     direction = null;
 
     if (this.currentState == "uber") {
-      this.animations.play("fly_up");
+      this.scale.y = 1;
+      this.animations.play("fly_hover");
       if (onGround) {
         this.animations.play("uber_stand");
       }

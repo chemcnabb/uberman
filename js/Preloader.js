@@ -23,7 +23,8 @@ Uberman.Preloader.prototype = {
     this.game.load.image('cape_streak', 'images/cape_streak.png');
     this.game.load.image('sun', 'images/sun.png');
     this.game.load.image('moon', 'images/moon.png');
-    this.game.load.spritesheet('hero', 'images/uber_sprite.gif', 55, 110, 17);
+    this.game.load.spritesheet('hero', 'images/uber_sprite.gif', 55, 110, 28);
+    this.game.load.spritesheet('pedestrian', 'images/pedestrians.gif', 55, 110, 67);
     this.game.load.image('car', 'images/car.gif', 300, 95);
     this.game.load.image('car2', 'images/car2.gif', 270, 81);
     this.game.load.image('uber_disk', 'images/UBER_DISK.png', 138,138);
@@ -35,6 +36,7 @@ Uberman.Preloader.prototype = {
   create: function () {
     console.log("PRELOADER");
     this.game.state.start("Game");
+    //this.game.state.start("MainMenu");
 
 
   },

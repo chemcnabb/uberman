@@ -52,16 +52,16 @@ module.exports = Uberman.Boot;
 var Uberman = Uberman || {};
 
 Hero = require('./prefabs/Hero');
+Pedestrian = require('./prefabs/Pedestrian');
 DayCycle = require('./prefabs/DayCycle');
 Car = require('./prefabs/Car');
 Hud = require('./prefabs/Hud');
 
 
 Uberman.Game = function (game) {
-  var player;
-  var platforms;
-  var cursors;
-  var jumpButton;
+
+
+
 };
 
 Uberman.Game.prototype = {
@@ -69,6 +69,9 @@ Uberman.Game.prototype = {
 
   preload: function () {
 
+    this.cars_sprites_array = ['car','car2'];
+    this.numcars = 10;
+    this.numpredestrians = 25;
 
 //http://kvazars.com/littera/
 
@@ -76,88 +79,168 @@ Uberman.Game.prototype = {
 
   },
 
+  randomChoice: function(choices){
 
-  create: function () {
+    var index =  Math.floor(Math.random() * choices.length);
+    return choices[index];
 
-    console.log("GAME");
-    dayCycle = new DayCycle(this.game, 60000*5);
-
-
+  },
+  addGradientBackground: function () {
     var bgBitMap = this.game.add.bitmapData(this.game.world.width, this.game.world.height);
 
     var myBitmap = this.game.add.bitmapData(this.game.world.width, this.game.world.height);
-    var grd=myBitmap.context.createLinearGradient(0,0,0,this.game.world.height);
-    grd.addColorStop(0,"black");
-    grd.addColorStop(1,"#85b5e1");
-    myBitmap.context.fillStyle=grd;
-    myBitmap.context.fillRect(0,0,this.game.world.width, this.game.world.height);
-    grd=myBitmap.context.createLinearGradient(0,580,0,this.game.world.height);
-    grd.addColorStop(0,"black");
-    grd.addColorStop(1,"#85b5e1");
-    myBitmap.context.fillStyle=grd;
-    myBitmap.context.fillRect(0,this.game.world.height, this.game.world.width,20);
-    var backgroundSprite = this.game.add.sprite(0, 0, myBitmap);
+    var grd = myBitmap.context.createLinearGradient(0, 0, 0, this.game.world.height);
 
+    grd.addColorStop(0, "black");
+    grd.addColorStop(1, "#85b5e1");
 
+    myBitmap.context.fillStyle = grd;
+    myBitmap.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
 
+    grd = myBitmap.context.createLinearGradient(0, 580, 0, this.game.world.height);
 
+    grd.addColorStop(0, "black");
+    grd.addColorStop(1, "#85b5e1");
 
+    myBitmap.context.fillStyle = grd;
+    myBitmap.context.fillRect(0, this.game.world.height, this.game.world.width, 20);
+
+    return this.game.add.sprite(0, 0, myBitmap);
+  },
+  addBackgroundSprites: function () {
+
+    this.sunSprite = this.game.add.sprite(this.game.world.width - (this.game.world.width / 2), this.game.world.height / 2, 'sun');
+    this.moonSprite = this.game.add.sprite(this.game.world.width - (this.game.world.width / 2), this.game.world.height, 'moon');
+
+    this.orbit = this.game.add.sprite(this.game.world.centerX - (4267 / 2), 1835, 'orbit');
+
+    this.game.fade = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 3000, 'city_fade');
+
+    this.game.back = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2100, 'city_background');
+
+    this.fore = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2133, 'city_foreground');
+
+  },
+  animateDayNight: function (backgroundSprite) {
+
+    var backgroundSprites = [
+      {sprite: backgroundSprite, from: 0x1f2a27, to: 0xB2DDC8},
+      {sprite: this.game.fade, from: 0x1f2a27, to: 0xB2DDC8},
+      {sprite: this.game.back, from: 0x1f2a27, to: 0xB2DDC8},
+      {sprite: this.fore, from: 0x2f403b, to: 0x96CCBB}
+    ];
+
+    var dayCycle = new DayCycle(this.game, 60000*5);
+
+    dayCycle.initShading(backgroundSprites);
+
+    dayCycle.initSun(this.sunSprite);
+
+    dayCycle.initMoon(this.moonSprite);
+
+  },
+  addGround: function () {
 
     platforms = this.game.add.group();
+
     platforms.enableBody = true;
 
     var ground = platforms.create(0, this.game.world.height - 209, 'ground');
+
     ground.scale.setTo(2, 2);
+
     this.game.physics.enable(ground);
 
     ground.body.immovable = true;
 
+  },
+  addVehicles: function () {
 
-    sunSprite = this.game.add.sprite(this.game.world.width - (this.game.world.width / 2), this.game.world.height/2, 'sun');
-    moonSprite = this.game.add.sprite(this.game.world.width - (this.game.world.width / 2), this.game.world.height, 'moon');
-
-
-
-    orbit = this.game.add.sprite(this.game.world.centerX-(4267/2), 1835, 'orbit');
-    fade = this.game.add.sprite(this.game.world.centerX-(4267/2), this.game.world.height-3000, 'city_fade');
-    back = this.game.add.sprite(this.game.world.centerX-(4267/2), this.game.world.height-2100, 'city_background');
-    fore = this.game.add.sprite(this.game.world.centerX-(4267/2), this.game.world.height-2133, 'city_foreground');
-
-    var backgroundSprites = [
-      {sprite: backgroundSprite, from: 0x1f2a27, to: 0xB2DDC8},
-      {sprite: fade, from: 0x1f2a27, to: 0xB2DDC8},
-      {sprite: back, from: 0x1f2a27, to: 0xB2DDC8},
-      {sprite: fore, from: 0x2f403b, to: 0x96CCBB}
-    ];
-
-    dayCycle.initShading(backgroundSprites);
-    dayCycle.initSun(sunSprite);
-    dayCycle.initMoon(moonSprite);
+    this.cars = this.game.add.group();
 
 
 
-    this.game.player = new Hero(this.game, this.game.world.centerX, this.game.world.height-260, this.game.world.height/2);
+    for (var i = 0; i < this.numcars; i++) {
 
+
+
+      var left_car = this.randomChoice(this.cars_sprites_array);
+      var right_car = this.randomChoice(this.cars_sprites_array);
+
+      var car_pos_dict_array = [{"LEFT": {x:this.game.world.width + 270, y:this.game.world.height - 120, car:left_car}},
+        {"RIGHT": {x:this.game.world.x - 300, y:this.game.world.height - 180, car:right_car}}];
+
+
+      var cars_array = this.randomChoice(car_pos_dict_array);
+
+      for(var item in cars_array){
+        if (cars_array.hasOwnProperty(item)) {
+          var car = new Car(this.game, cars_array[item].x, cars_array[item].y, cars_array[item].car, item);
+
+          this.cars.add(car);
+        }
+      }
+
+    }
+
+  this.cars.children = this.cars.children.sort(function(a, b) {
+    return (b.direction > a.direction) ? 1 : ((a.direction > b.direction) ? -1 : 0);
+  });
+
+  for(var grp_car in this.cars.children){
+    if (this.cars.hasOwnProperty(grp_car)) {
+      //console.log(grp_car);
+      this.game.add.existing(grp_car);
+    }
+  }
+
+
+
+
+
+  },
+  create: function () {
+
+    console.log("GAME");
+
+
+
+    var backgroundSprite = this.addGradientBackground();
+    this.addGround();
+    this.addBackgroundSprites();
+    this.animateDayNight(backgroundSprite);
     this.game.door = this.game.add.sprite(3785, 7942, 'door');
 
     this.game.physics.arcade.enable(this.game.door);
     this.game.door.anchor.setTo(0.5, 0.5);
 
+    this.game.player = new Hero(this.game, this.game.world.centerX, this.game.world.height-260, this.game.world.height/2);
+
+
+    var pedestrians = this.game.add.group();
+    for (var i = 0; i < this.numpredestrians; i++) {
+      var pedestrian = new Pedestrian(this.game, this.game.world.height-260, "pedestrian");
+      this.game.add.existing(pedestrian);
+      pedestrians.add(pedestrian);
+    }
+
+
+
+
+
+
+
+
+
+
     this.game.add.existing(this.game.player);
 
 
-    this.car = new Car(this.game, this.game.world.x-300, this.game.world.height-180, 'car', "RIGHT");
-    this.car4 = new Car(this.game, this.game.world.x-300, this.game.world.height-180, 'car2', "RIGHT");
-    this.car2 = new Car(this.game, this.game.world.width+270, this.game.world.height-120, 'car2', "LEFT");
-    this.car3 = new Car(this.game, this.game.world.width+270, this.game.world.height-120, 'car', "LEFT");
 
-    this.game.add.existing(this.car);
-    this.game.add.existing(this.car4);
-    this.game.add.existing(this.car2);
-    this.game.add.existing(this.car3);
+    this.addVehicles();
 
-    this.game.health = new Hud(this.game);
-    this.game.add.existing(this.game.health);
+    this.game.hud = new Hud(this.game);
+    this.game.add.existing(this.game.hud);
 
     cursors = this.game.input.keyboard.createCursorKeys();
 
@@ -177,7 +260,65 @@ Uberman.Game.prototype = {
 };
 
 module.exports = Uberman.Game;
-},{"./prefabs/Car":5,"./prefabs/DayCycle":6,"./prefabs/Hero":7,"./prefabs/Hud":8}],3:[function(require,module,exports){
+},{"./prefabs/Car":6,"./prefabs/DayCycle":7,"./prefabs/Hero":8,"./prefabs/Hud":9,"./prefabs/Pedestrian":10}],3:[function(require,module,exports){
+var Uberman = Uberman || {};
+
+
+Uberman.MainMenu = function (Uberman) {
+
+};
+
+Uberman.MainMenu.prototype = {
+
+
+  preload: function () {
+
+
+  },
+
+
+  create: function () {
+    console.log("MAINMENU");
+
+    var message = ["Uberman!"];
+    message.push("Start");
+    message.push("Continue");
+
+    var title = this.game.add.bitmapText((this.game.width/2), this.game.height/2-200, 'font',message[0],48);
+    title.anchor.set(0.5, 0.5);
+    var menu_item = this.game.add.bitmapText((this.game.width/2), this.game.height/2-100, 'font',message[1],38);
+    menu_item.anchor.set(0.5, 0.5);
+    var tween = this.game.add.tween(menu_item.scale).to( { x: 1.1, y:1.1 }, 350, Phaser.Easing.Linear.InOut, true, -1, -1, true).loop(true);
+    menu_item.inputEnabled = true;
+
+    var that = this;
+    menu_item.events.onInputUp.add(function () {
+      console.log("PRESSED");
+      that.game.add.tween(menu_item.scale).to( { x:0.8, y:0.8 }, 350, Phaser.Easing.Circular.In, true);
+      var tween = that.game.add.tween(menu_item).to( { y: -100 }, 350, Phaser.Easing.Circular.In, true);
+      tween.onComplete.add(function(){
+        that.game.state.start("Game");
+      });
+    });
+    menu_item.events.onInputOver.add(function () {
+      console.log("Hover");
+    });
+  },
+
+
+  update: function () {
+
+
+  },
+
+  render: function () {
+
+  }
+
+};
+
+module.exports = Uberman.MainMenu;
+},{}],4:[function(require,module,exports){
 var Uberman = Uberman || {};
 
 
@@ -203,7 +344,8 @@ Uberman.Preloader.prototype = {
     this.game.load.image('cape_streak', 'images/cape_streak.png');
     this.game.load.image('sun', 'images/sun.png');
     this.game.load.image('moon', 'images/moon.png');
-    this.game.load.spritesheet('hero', 'images/uber_sprite.gif', 55, 110, 17);
+    this.game.load.spritesheet('hero', 'images/uber_sprite.gif', 55, 110, 28);
+    this.game.load.spritesheet('pedestrian', 'images/pedestrians.gif', 55, 110, 67);
     this.game.load.image('car', 'images/car.gif', 300, 95);
     this.game.load.image('car2', 'images/car2.gif', 270, 81);
     this.game.load.image('uber_disk', 'images/UBER_DISK.png', 138,138);
@@ -215,6 +357,7 @@ Uberman.Preloader.prototype = {
   create: function () {
     console.log("PRELOADER");
     this.game.state.start("Game");
+    //this.game.state.start("MainMenu");
 
 
   },
@@ -232,7 +375,7 @@ Uberman.Preloader.prototype = {
 };
 
 module.exports = Uberman.Preloader;
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 /**
  * Created by che.mcnabb on 16-08-20.
  */
@@ -246,6 +389,7 @@ module.exports = Uberman.Preloader;
 var Uberman = Uberman || {};
 Boot = require("./Boot");
 Preloader = require("./Preloader");
+MainMenu = require("./MainMenu");
 Game = require("./Game");
 
 
@@ -268,14 +412,14 @@ var size = {
   // add game states
   game.state.add('Boot', Boot);
   game.state.add('Preloader', Preloader);
-  //game.state.add('MainMenu', MainMenu);
+  game.state.add('MainMenu', MainMenu);
   game.state.add('Game', Game);
   // start the Boot state
   game.state.start('Boot');
 
 })(size);
 
-},{"./Boot":1,"./Game":2,"./Preloader":3}],5:[function(require,module,exports){
+},{"./Boot":1,"./Game":2,"./MainMenu":3,"./Preloader":4}],6:[function(require,module,exports){
 Car = function (game, x, y, frame, direction) {
   Phaser.Sprite.call(this, game, x, y, frame, 0);
   this.direction = direction;
@@ -310,7 +454,7 @@ Car.prototype.start = function () {
     goal = this.game.world.width+this.width;
     this.scale.x = 1;
   }
-  this.car_tween.to({ x: goal}, 6000).loop(true);
+  this.car_tween.to({ x: goal}, this.game.rnd.integerInRange(5000,7000)).loop(true);
 
   this.car_tween.delay(this.game.rnd.integerInRange(100,10000));
 
@@ -331,7 +475,7 @@ Car.prototype.update = function () {
 
 
 module.exports = Car;
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 DayCycle = function (game, dayLength) {
   this.game = game;
   this.dayLength = dayLength;
@@ -417,7 +561,7 @@ DayCycle.prototype.tweenTint = function (spriteToTween, startColor, endColor, du
 
 
 module.exports = DayCycle;
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 Hero = function (game, x, y, frame) {
   Phaser.Sprite.call(this, game, x, y, 'hero', frame);
 
@@ -446,10 +590,15 @@ this.followedObject = this.body;
   this.alter_walk = this.animations.add("alter_walk", [5, 6, 7, 8, 9, 10], 6, false);
   this.alter_walk = this.animations.add("alter_stand", [5], 6, false);
   this.alter_walk = this.animations.add("uber_stand", [0], 6, false);
-  this.alter_walk = this.animations.add("uber_walk", [11, 12, 13, 14, 15], 6, false);
+  this.alter_walk = this.animations.add("uber_walk", [17, 18, 19, 20, 21, 22], 6, false);
+
+  this.alter_walk = this.animations.add("fly_get_ready", [23], 1, true);
   this.alter_walk = this.animations.add("fly_side", [3,4], 6, false);
-  this.alter_walk = this.animations.add("fly_up", [1,2], 6, true);
-  this.alter_walk = this.animations.add("take_off", [16], 6, true);
+  this.alter_walk = this.animations.add("fly_side_up", [11, 12], 6, true);
+  this.alter_walk = this.animations.add("fly_side_down", [13, 14], 6, true);
+  this.alter_walk = this.animations.add("fly_hover", [1,2], 6, true);
+  this.alter_walk = this.animations.add("fly_up", [15,16], 6, true);
+  this.alter_walk = this.animations.add("fly_down", [15,16], 6, true);
   this.alter_walk = this.animations.add("fly_up_diagonal", [3,4], 6, true);
   this.alter_walk = this.animations.add("fly_down_diagonal", [3,4], 6, true);
 
@@ -477,8 +626,7 @@ Hero.prototype.constructor = Hero;
 
 
 Hero.prototype.spriteMessage = function (sprite, message) {
-console.log("CALLED SPRITE MESSAGE");
-console.log(sprite);
+
 
 
   if(!this.game.input.activePointer.isDown){
@@ -643,15 +791,15 @@ Hero.prototype.uber_movement = function (onGround) {
   var direction = this.getCardinal(angle, true);
 
 
-back.x -= this.body.velocity.x*(0.001);
-  fade.x -= this.body.velocity.x*(0.0005);
+this.game.back.x -= this.body.velocity.x*(0.001);
+  this.game.fade.x -= this.body.velocity.x*(0.0005);
   if(!onGround){
-    back.y -= this.body.velocity.y*(0.001);
-    fade.y -= this.body.velocity.y*(0.0005);
+    this.game.back.y -= this.body.velocity.y*(0.001);
+    this.game.fade.y -= this.body.velocity.y*(0.0005);
   }
 
 
-
+  this.scale.y = 1;
 
   switch (direction) {
 
@@ -662,7 +810,7 @@ back.x -= this.body.velocity.x*(0.001);
       if (!onGround) {
         this.animations.play("fly_up");
       } else {
-        this.animations.play("take_off");
+        this.animations.play("uber_stand");
         //this.animations.currentAnim.onComplete.add(function () {	this.animations.play("fly_up");}, this);
 
       }
@@ -671,11 +819,33 @@ back.x -= this.body.velocity.x*(0.001);
       break;
     case "DOWN":
       this.angle = 0;
-
+      this.scale.y = -1;
 
       if (!onGround) {
-        this.animations.play("fly_up");
+        if(this.y>this.game.world.height-1200){
+
+
+            if(this.animations.currentAnim.name == "fly_down"){
+
+              this.animations.play("fly_get_ready");
+              this.events.onAnimationComplete.add(function() {
+
+                this.scale.y = 1;
+                this.animations.play("fly_hover");
+              }, this);
+
+
+          }else{
+              this.scale.y = 1;
+              this.animations.play("fly_hover");
+          }
+
+
+         }else {
+          this.animations.play("fly_down");
+        }
       } else {
+        this.scale.y = 1;
         this.animations.play("uber_stand");
       }
 
@@ -686,9 +856,9 @@ back.x -= this.body.velocity.x*(0.001);
       this.scale.x = -1;
       if(!onGround){
         this.angle = -45;
-        this.animations.play("fly_up_diagonal");
+        this.animations.play("fly_side_up");
       }else{
-        this.animations.play("take_off");
+        this.animations.play("uber_stand");
         //this.animations.currentAnim.onComplete.add(function () {
         //  this.angle = -45;
         //  this.animations.play("fly_up_diagonal");
@@ -703,7 +873,7 @@ back.x -= this.body.velocity.x*(0.001);
 
       if(!onGround){
         this.angle = 45;
-        this.animations.play("fly_up_diagonal");
+        this.animations.play("fly_side_up");
       }else{
         this.animations.play("take_off");
         //this.animations.currentAnim.onComplete.add(function () {
@@ -730,7 +900,7 @@ back.x -= this.body.velocity.x*(0.001);
       this.scale.x = 1;
       if (!onGround) {
         this.angle = 135;
-        this.animations.play("fly_down_diagonal");
+        this.animations.play("fly_side_down");
       } else {
 
         this.angle = 0;
@@ -742,7 +912,7 @@ back.x -= this.body.velocity.x*(0.001);
       this.scale.x = -1;
       if (!onGround) {
         this.angle = -135;
-        this.animations.play("fly_down_diagonal");
+        this.animations.play("fly_side_down");
       } else {
 
         this.angle = 0;
@@ -798,7 +968,8 @@ if(!this.isZooming) {
     direction = null;
 
     if (this.currentState == "uber") {
-      this.animations.play("fly_up");
+      this.scale.y = 1;
+      this.animations.play("fly_hover");
       if (onGround) {
         this.animations.play("uber_stand");
       }
@@ -821,7 +992,7 @@ Hero.prototype.render = function () {
 
 
 module.exports = Hero;
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 
 HUD = function (game,  x, y) {
   // the bar itself
@@ -858,7 +1029,7 @@ HUD.prototype.preload = function () {
 
 HUD.prototype.switchState = function() {
   if (this.player.currentState == "uber") {
-    console.log("SCALE:", this.uber_disk.scale, this.uber_disk.alpha, this.uber_disk.x);
+    //console.log("SCALE:", this.uber_disk.scale, this.uber_disk.alpha, this.uber_disk.x);
     //this.game.add.tween(this.alter_disk).to({alpha:0}, 100, Phaser.Easing.Bounce.InOut, true);
     this.game.add.tween(this.alter_disk.scale).to({x:0, y:0}, 30, Phaser.Easing.Bounce.InOut, true);
     //this.game.add.tween(this.uber_disk).to({alpha:1}, 100, Phaser.Easing.Bounce.InOut, true);
@@ -917,4 +1088,278 @@ HUD.prototype.update = function() {
 };
 
 module.exports = HUD;
-},{}]},{},[4]);
+},{}],10:[function(require,module,exports){
+
+Pedestrian = function (game, y, sprite) {
+  Phaser.Sprite.call(this, game, game.rnd.integerInRange(-200, game.world.width+200), y, sprite, 0);
+
+  this.anchor.setTo(0.5, 0.5);
+  this.goal = game.world.centerX;
+  //this.goal = this.setGoal();
+  this.isMoving = false;
+  this.frame = 0;
+  this.frames = [];
+  this.pedestrian_array = ["oldman-wait","businessman-wait", "delivery-wait","boy-wait", "slick-wait", "hapgood-wait", "foreign-wait"];
+  this.direction = this.setDirection();
+  this.sprite_message = "";
+
+  this.animations.add("oldman-wait", [14], 6, true);
+  this.animations.add("oldman-walk", [0, 1, 2, 3, 4, 5], 6, true);
+  this.animations.add("businessman-walk", [6, 7, 8, 9], 6, true);
+  this.animations.add("businessman-wait", [10, 11, 12, 13], 6, true);
+  this.animations.add("delivery-wait", [21], 6, true);
+  this.animations.add("delivery-walk", [15,16,17,18,19,20], 6, true);
+  this.animations.add("boy-walk", [22, 23, 24, 25, 26, 27], 6, true);
+  this.animations.add("boy-wait", [28], 6, true);
+  this.animations.add("slick-walk", [29, 30, 31, 32, 33, 34,35,36,37], 9, true);
+  this.animations.add("slick-wait", [38], 6, true);
+  this.animations.add("hapgood-walk", [39, 40, 41, 42, 43, 44,45,46,47, 48, 49, 50], 12, true);
+  this.animations.add("hapgood-wait", [51,52,53,54], 6, true);
+
+  this.animations.add("foreign-walk", [55,56,57,58,59,60], 6, true);
+  this.animations.add("foreign-wait", [61], 6, true);
+
+
+
+  this.anim = this.randomChoice(this.pedestrian_array);
+
+  this.check_animation();
+  this.movement();
+
+
+
+
+};
+
+Pedestrian.prototype = Object.create(Phaser.Sprite.prototype);
+
+Pedestrian.prototype.constructor = Pedestrian;
+
+
+
+
+
+
+
+Pedestrian.prototype.spriteMessage = function (sprite, message) {
+
+
+
+
+
+};
+
+Pedestrian.prototype.onSpriteHover = function (sprite, pointer) {
+
+
+
+
+};
+
+Pedestrian.prototype.getRandomRange= function (low, high) {
+return this.game.rnd.integerInRange(low, high);
+};
+
+  Pedestrian.prototype.setGoal = function () {
+    var startXArray = this.randomChoice([[0, this.x+1000], [0, this.x-1000]]);
+    var start = this.getRandomRange(startXArray[0], startXArray[1]);
+return this.getRandomRange(start, this.game.world.width-20);
+
+  };
+
+Pedestrian.prototype.setDirection = function () {
+
+  if(this.goal < this.x){
+    return "LEFT";
+  }else{
+    return "RIGHT";
+  }
+
+
+};
+Pedestrian.prototype.randomChoice=function(choices){
+  var index =  Math.floor(Math.random() * choices.length);
+  return choices[index];
+};
+
+
+Pedestrian.prototype.getSpeed = function(speed, vary) {
+  var return_speed = speed + this.game.rnd.integerInRange(100, vary);
+  return (Math.round((Phaser.Math.distance(this.x, this.y, this.goal, this.y) / return_speed) * 1000000));
+};
+Pedestrian.prototype.check_animation = function() {
+  this.move_tween = this.game.add.tween(this);
+  var delay = this.game.rnd.integerInRange(1000, 6000);
+
+  switch (this.anim) {
+
+
+
+    case "delivery-walk":
+      this.speed = this.getSpeed(15000, 5000);
+      this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
+
+      this.isMoving = true;
+      //this.move_tween.start();
+      break;
+    case "delivery-wait":
+      this.speed = 0;
+      //this.move_tween.stop();
+      this.isMoving = false;
+      this.anim = "delivery-wait";
+      break;
+    case "businessman-walk":
+      this.speed = this.getSpeed(20000, 2000);
+      this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
+
+      this.isMoving = true;
+      //this.move_tween.start();
+      break;
+    case "businessman-wait":
+      this.speed = 0;
+      //this.move_tween.stop();
+
+      this.isMoving = false;
+      break;
+    case "oldman-walk":
+      this.speed = this.getSpeed(40000, 5000);
+      this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
+
+      this.isMoving = true;
+      //this.move_tween.start();
+      break;
+    case "oldman-wait":
+      this.speed = 0;
+      //this.move_tween.stop();
+      this.isMoving = false;
+
+      break;
+    case "boy-walk":
+      this.speed = this.getSpeed(15000, 5000);
+      this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
+
+      this.isMoving = true;
+      //this.move_tween.start();
+      break;
+    case "boy-wait":
+      this.speed = 0;
+      //this.move_tween.stop();
+      this.isMoving = false;
+
+      break;
+    case "slick-walk":
+      this.speed = this.getSpeed(50000, 5000);
+      this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
+      this.isMoving = true;
+      break;
+    case "slick-wait":
+      this.speed = 0;
+      //this.move_tween.stop();
+      this.isMoving = false;
+
+      break;
+    case "hapgood-walk":
+      this.speed = this.getSpeed(70000, 5000);
+      this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
+      this.isMoving = true;
+      break;
+    case "hapgood-wait":
+      this.speed = 0;
+      //this.move_tween.stop();
+      this.isMoving = false;
+
+      break;
+    case "foreign-walk":
+      this.speed = this.getSpeed(20000, 5000);
+      this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
+      this.isMoving = true;
+      break;
+    case "foreign-wait":
+      this.speed = 0;
+      //this.move_tween.stop();
+      this.isMoving = false;
+
+      break;
+  }
+
+  this.move_tween.start();
+  this.move_tween.onStart.add(function(){
+      this.isMoving = this.anim.indexOf("-walk") === true;
+    this.movement();},
+    this);
+
+  this.move_tween.onComplete.add(function(){
+      this.anim = this.anim.replace("-walk", "-wait");
+      this.movement();},
+    this);
+  //this.jog = this.animations.add(anim, [6,7,8,9], 6, true);
+
+};
+
+
+Pedestrian.prototype.movement = function () {
+
+
+  this.animations.play(this.anim);
+
+
+  if(this.direction=="LEFT"){
+    this.scale.x = -1;
+  }else{
+    this.scale.x = 1;
+  }
+
+  this.loaded = true;
+
+};
+
+
+
+Pedestrian.prototype.update = function () {
+  //this.check_animation();
+  if(this.x == this.goal){
+
+    if(this.anim.indexOf("-wait") === -1){
+      this.isMoving = false;
+      this.anim = this.anim.replace("-walk", "-wait");
+      this.check_animation();
+    }
+
+  }
+
+
+
+
+
+
+
+  if(this.animations.currentAnim.name.indexOf("-walk") === -1 && this.isMoving !== true){
+
+
+      this.anim = this.anim.replace("-wait", "-walk");
+
+      this.goal = this.setGoal();
+      this.direction = this.setDirection();
+      this.check_animation();
+    console.log(this.anim, "CHANGED GOAL", this.speed);
+
+  }
+  //if (this.anim != "businessman-wait"){
+  //  this.anim = "businessman-wait";
+  //  this.check_animation();
+  //  this.movement();
+  //}
+
+
+
+
+
+
+
+  //console.log(this.originHeight, this.y);
+};
+
+
+
+module.exports = Pedestrian;
+},{}]},{},[5]);
