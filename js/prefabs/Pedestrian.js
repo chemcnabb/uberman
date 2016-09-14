@@ -194,12 +194,16 @@ Pedestrian.prototype.life = function () {
 
 
   }
+  
+  
 
 };
   Pedestrian.prototype.setGoal = function () {
 
     var need=[], weight=[];
-
+    
+    console.log(this.thoughts);
+    
     for ( var i = 0; i < this.thoughts.needs.length; i++)
     {
 
