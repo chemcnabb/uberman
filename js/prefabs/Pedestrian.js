@@ -187,6 +187,9 @@ Pedestrian.prototype.life = function () {
         this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.education)+this.thoughts.educationBaseWeight)*modifier;
 
       }
+      
+      
+      console.log(needs.maslow[j].need, this.thoughts.needs[i].maslow[j].weight);
     }
 
 
