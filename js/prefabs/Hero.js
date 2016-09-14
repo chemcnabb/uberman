@@ -212,8 +212,7 @@ Hero.prototype.alter_movement = function (onGround) {
       this.scale.x = -1;
       this.animations.play("alter_walk");
     }
-
-
+    
     this.game.physics.arcade.moveToXY(this, pointer.worldX, this.y, 225);
 
 
