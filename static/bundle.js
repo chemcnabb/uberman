@@ -1120,18 +1120,58 @@ Pedestrian = function (game, y, sprite) {
   this.frame = 0;
   this.frames = [];
   this.pedestrian_array = ["oldman-wait","businessman-wait", "delivery-wait","boy-wait", "slick-wait", "hapgood-wait", "foreign-wait"];
-  this.hunger = this.getRandomRange(0, 100);
+  this.food = this.getRandomRange(0, 100);
   this.warmth = this.getRandomRange(0, 100);
   this.money = this.getRandomRange(0, 100);
+  this.water = this.getRandomRange(0, 100);
+  this.security = this.getRandomRange(0, 100);
+  this.friendship = this.getRandomRange(0, 100);
+  this.intimacy = this.getRandomRange(0, 100);
+  this.family = this.getRandomRange(0, 100);
+  this.confidence = this.getRandomRange(0, 100);
+  this.art = this.getRandomRange(0, 100);
+  this.education = this.getRandomRange(0, 100);
   this.thoughts = {
     "needs":[
-      {"need":"FOOD","weight":1},
-      {"need":"MONEY","weight":1.2},
-      {"need":"WARMTH","weight":1.25}
+      {
+        "maslow":[
+          {"need":"WATER","weight":2.4},
+          {"need":"FOOD","weight":2.1}
+      ], "totalWeight":4.5},
+      {
+        "maslow":[
+          {"need":"SECURITY","weight":1.09},
+          {"need":"MONEY","weight":1.08},
+          {"need":"WARMTH","weight":1.07}
+      ],"totalWeight":4.4 },
+      {
+        "maslow":[
+          {"need":"FRIENDSHIP","weight":1.06},
+          {"need":"INTIMACY","weight":1.05},
+          {"need":"FAMILY","weight":1.04}
+      ],"totalWeight":2.5},
+      {
+        "maslow":[
+          {"need":"CONFIDENCE","weight":1.03}
+      ],"totalWeight":1.03},
+      {
+        "maslow":[
+          {"need":"ART","weight":1.02},
+          {"need":"EDUCATION","weight":1.01}
+      ],"totalWeight":1.03}
     ],
-    "hungerWeight":1,
-    "moneyWeight":1.2,
-    "warmthWeight":1.25
+
+    "waterBaseWeight":2.4,
+    "foodBaseWeight":2.1,
+    "securityBaseWeight":1.09,
+    "moneyBaseWeight":1.08,
+    "warmthBaseWeight":1.07,
+    "friendshipBaseWeight":1.06,
+    "intimacyBaseWeight":1.05,
+    "familyBaseWeight":1.04,
+    "confidenceBaseWeight":1.03,
+    "artBaseWeight":1.02,
+    "educationBaseWeight":1.01
   };
 
   this.direction = this.setDirection();
@@ -1197,21 +1237,69 @@ Pedestrian.prototype.life = function () {
   //console.log(this.hunger);
 
 
-  this.hunger += 0.01;
+  this.food += 0.01;
+  this.money -= 0.01;
+  this.water -= 0.01;
+  this.security -= 0.01;
   this.money -= 0.01;
   this.warmth -= 0.01;
+  this.friendship -= 0.01;
+  this.intimacy -= 0.01;
+  this.family -= 0.01;
+  this.confidence -= 0.01;
+  this.art -= 0.01;
+  this.education -= 0.01;
+
   for ( var i = 0; i < this.thoughts.needs.length; i++)
   {
-    if(this.thoughts.needs[i].need == "FOOD"){
-      this.thoughts.needs[i].weight = (this.hunger * 0.0032)+this.thoughts.hungerWeight;
-    }
-    if(this.thoughts.needs[i].need == "MONEY"){
-      this.thoughts.needs[i].weight = (0.0032/this.money )+this.thoughts.moneyWeight;
-    }
-    if(this.thoughts.needs[i].need == "WARMTH"){
-      this.thoughts.needs[i].weight = (0.0032/this.warmth)+this.thoughts.warmthWeight;
+    var needs = this.thoughts.needs[i];
 
+    for(var j = 0; j< needs.maslow.length;j++){
+
+      //TODO: adjust calculation of 0.0032 to reflaect maslow hierarchy
+      var modifier = i+1;
+      if(needs.maslow[j].need == "FOOD"){
+        this.thoughts.needs[i].maslow[j].weight = ((this.food * 0.0032)+this.thoughts.foodBaseWeight)*modifier;
+      }
+      if(needs.maslow[j].need == "WATER"){
+        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.water)+this.thoughts.waterBaseWeight)*modifier;
+      }
+      if(needs.maslow[j].need == "SECURITY"){
+        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.security)+this.thoughts.securityBaseWeight)*modifier;
+      }
+      if(needs.maslow[j].need == "MONEY"){
+        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.money )+this.thoughts.moneyBaseWeight)*modifier;
+      }
+      if(needs.maslow[j].need == "WARMTH"){
+        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.warmth)+this.thoughts.warmthBaseWeight)*modifier;
+
+      }
+      if(needs.maslow[j].need == "FRIENDSHIP"){
+        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.friendship)+this.thoughts.friendshipBaseWeight)*modifier;
+
+      }
+      if(needs.maslow[j].need == "INTIMACY"){
+        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.intimacy)+this.thoughts.intimacyBaseWeight)*modifier;
+
+      }
+      if(needs.maslow[j].need == "FAMILY"){
+        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.family)+this.thoughts.familyBaseWeight)*modifier;
+
+      }
+      if(needs.maslow[j].need == "CONFIDENCE"){
+        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.confidence)+this.thoughts.confidenceBaseWeight)*modifier;
+
+      }
+      if(needs.maslow[j].need == "ART"){
+        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.art)+this.thoughts.artBaseWeight)*modifier;
+
+      }
+      if(needs.maslow[j].need == "EDUCATION"){
+        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.education)+this.thoughts.educationBaseWeight)*modifier;
+
+      }
     }
+
 
   }
 
@@ -1220,51 +1308,77 @@ Pedestrian.prototype.life = function () {
 
     var need=[], weight=[];
 
-
-    this.thoughts.needs.sort( function(a,b){return b.weight - a.weight; } );
-
-
     for ( var i = 0; i < this.thoughts.needs.length; i++)
     {
-      need[i] = this.thoughts.needs[i].need;
-      weight[i]   = this.thoughts.needs[i].weight;
 
-      //console.log(need[i], Math.round(this.hunger), weight[i]);
+      var total = 0;
+      for(var k=0;k<this.thoughts.needs[i].maslow.length;k++){
+        total += this.thoughts.needs[i].maslow[k].weight;
+      }
+      this.thoughts.needs[i].totalWeight = total;
+
+
+
+      this.thoughts.needs[i].maslow.sort( function(a,b){return b.weight - a.weight; } );
+      this.thoughts.needs.sort( function(a,b){return b.totalWeight - a.totalWeight; } );
+
+
     }
 
 
-    switch(need[0]){
+    switch (this.thoughts.needs[0].maslow[0].need) {
+
+
+      case "WATER":
+        console.log("I'm THIRSTY!!", this.thoughts.needs[0].maslow[0].weight);
+        this.water = 100;
+        break;
+      case "SECURITY":
+        console.log("I'm SCARED!!", this.thoughts.needs[0].maslow[0].weight);
+        this.security = 100;
+        break;
+      case "FRIENDSHIP":
+        console.log("I NEED FRIENDS!!", this.thoughts.needs[0].maslow[0].weight);
+        this.friendship = 100;
+        break;
+      case "INTIMACY":
+        console.log("I'm LONELY!!", this.thoughts.needs[0].maslow[0].weight);
+        this.intimacy = 100;
+        break;
+      case "FAMILY":
+        console.log("I HAVE NO SUPPORT!!", this.thoughts.needs[0].maslow[0].weight);
+        this.family = 100;
+        break;
+      case "CONFIDENCE":
+        console.log("I'm INSECURE!!", this.thoughts.needs[0].maslow[0].weight);
+        this.confidence = 100;
+        break;
+      case "ART":
+        console.log("I'm NOT CREATIVE!!", this.thoughts.needs[0].maslow[0].weight);
+        this.art = 100;
+        break;
+      case "EDUCATION":
+        console.log("I'm DUMB!!", this.thoughts.needs[0].maslow[0].weight);
+        this.education = 100;
+        break;
+
       case "FOOD":
-        console.log("I'm HUNGRY!!");
-        for ( var l = 0; l < this.thoughts.needs.length; l++)
-        {
-          if(this.thoughts.needs[l].need == "FOOD"){
-            this.hunger = 0;
-            break;
-          }
-        }
+        console.log("I'm HUNGRY!!", this.thoughts.needs[0].maslow[0].weight);
+        this.food = 0;
         break;
 
       case "WARMTH":
-        console.log("I'm COLD!!");
-        for ( var j = 0; j < this.thoughts.needs.length; j++)
-        {
-          if(this.thoughts.needs[j].need == "WARMTH"){
-            this.warmth = 100;
-            break;
-          }
-        }
+        console.log("I'm COLD!!", this.thoughts.needs[0].maslow[0].weight);
+
+        this.warmth = 100;
+
         break;
 
       case "MONEY":
-        console.log("I'm BROKE!!");
-        for ( var k = 0; k < this.thoughts.needs.length; k++)
-        {
-          if(this.thoughts.needs[k].need == "MONEY"){
-            this.money = 100;
-            break;
-          }
-        }
+        console.log("I'm BROKE!!", this.thoughts.needs[0].maslow[0].weight);
+
+        this.money = 100;
+
         break;
     }
 
