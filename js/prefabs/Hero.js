@@ -217,7 +217,7 @@ Hero.prototype.alter_movement = function (onGround) {
 
 
   }
-  
+
 };
 
 Hero.prototype.uber_movement = function (onGround) {
@@ -225,7 +225,7 @@ Hero.prototype.uber_movement = function (onGround) {
   var direction = this.getCardinal(angle, true);
 
 
-this.game.back.x -= this.body.velocity.x*(0.001);
+  this.game.back.x -= this.body.velocity.x*(0.001);
   this.game.fade.x -= this.body.velocity.x*(0.0005);
   if(!onGround){
     this.game.back.y -= this.body.velocity.y*(0.001);
@@ -387,16 +387,20 @@ if(!this.isZooming) {
 
   if (this.game.input.activePointer.isDown) {
     if (!this.pointerHover) {
+
       if (this.currentState == "uber") {
         this.uber_movement(onGround);
       } else {
         this.alter_movement(onGround);
       }
+    }else{
+
+      this.pointerHover = false;
     }
 
   }
 
-  if (!this.game.input.activePointer.justReleased(1) && !this.game.input.activePointer.isDown) {
+  if (!this.game.input.activePointer.isDown) {
     this.angle = 0;
     this.body.velocity.set(0);
     direction = null;

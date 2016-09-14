@@ -9,6 +9,20 @@ Pedestrian = function (game, y, sprite) {
   this.frame = 0;
   this.frames = [];
   this.pedestrian_array = ["oldman-wait","businessman-wait", "delivery-wait","boy-wait", "slick-wait", "hapgood-wait", "foreign-wait"];
+  this.hunger = this.getRandomRange(0, 100);
+  this.warmth = this.getRandomRange(0, 100);
+  this.money = this.getRandomRange(0, 100);
+  this.thoughts = {
+    "needs":[
+      {"need":"FOOD","weight":1},
+      {"need":"MONEY","weight":1.2},
+      {"need":"WARMTH","weight":1.25}
+    ],
+    "hungerWeight":1,
+    "moneyWeight":1.2,
+    "warmthWeight":1.25
+  };
+
   this.direction = this.setDirection();
   this.sprite_message = "";
 
@@ -68,8 +82,86 @@ Pedestrian.prototype.onSpriteHover = function (sprite, pointer) {
 Pedestrian.prototype.getRandomRange= function (low, high) {
 return this.game.rnd.integerInRange(low, high);
 };
+Pedestrian.prototype.life = function () {
+  //console.log(this.hunger);
 
+
+  this.hunger += 0.01;
+  this.money -= 0.01;
+  this.warmth -= 0.01;
+  for ( var i = 0; i < this.thoughts.needs.length; i++)
+  {
+    if(this.thoughts.needs[i].need == "FOOD"){
+      this.thoughts.needs[i].weight = (this.hunger * 0.0032)+this.thoughts.hungerWeight;
+    }
+    if(this.thoughts.needs[i].need == "MONEY"){
+      this.thoughts.needs[i].weight = (0.0032/this.money )+this.thoughts.moneyWeight;
+    }
+    if(this.thoughts.needs[i].need == "WARMTH"){
+      this.thoughts.needs[i].weight = (0.0032/this.warmth)+this.thoughts.warmthWeight;
+
+    }
+
+  }
+
+};
   Pedestrian.prototype.setGoal = function () {
+
+    var need=[], weight=[];
+
+
+    this.thoughts.needs.sort( function(a,b){return b.weight - a.weight; } );
+
+
+    for ( var i = 0; i < this.thoughts.needs.length; i++)
+    {
+      need[i] = this.thoughts.needs[i].need;
+      weight[i]   = this.thoughts.needs[i].weight;
+
+      //console.log(need[i], Math.round(this.hunger), weight[i]);
+    }
+
+
+    switch(need[0]){
+      case "FOOD":
+        console.log("I'm HUNGRY!!");
+        for ( var l = 0; l < this.thoughts.needs.length; l++)
+        {
+          if(this.thoughts.needs[l].need == "FOOD"){
+            this.hunger = 0;
+            break;
+          }
+        }
+        break;
+
+      case "WARMTH":
+        console.log("I'm COLD!!");
+        for ( var j = 0; j < this.thoughts.needs.length; j++)
+        {
+          if(this.thoughts.needs[j].need == "WARMTH"){
+            this.warmth = 100;
+            break;
+          }
+        }
+        break;
+
+      case "MONEY":
+        console.log("I'm BROKE!!");
+        for ( var k = 0; k < this.thoughts.needs.length; k++)
+        {
+          if(this.thoughts.needs[k].need == "MONEY"){
+            this.money = 100;
+            break;
+          }
+        }
+        break;
+    }
+
+
+
+
+
+
     var startXArray = this.randomChoice([[0, this.x+1000], [0, this.x-1000]]);
     var start = this.getRandomRange(startXArray[0], startXArray[1]);
 return this.getRandomRange(start, this.game.world.width-20);
@@ -96,101 +188,76 @@ Pedestrian.prototype.getSpeed = function(speed, vary) {
   var return_speed = speed + this.game.rnd.integerInRange(100, vary);
   return (Math.round((Phaser.Math.distance(this.x, this.y, this.goal, this.y) / return_speed) * 1000000));
 };
-Pedestrian.prototype.check_animation = function() {
-  this.move_tween = this.game.add.tween(this);
-  var delay = this.game.rnd.integerInRange(1000, 6000);
+Pedestrian.prototype.Brain = function() {
+
 
   switch (this.anim) {
-
-
-
     case "delivery-walk":
       this.speed = this.getSpeed(15000, 5000);
-      this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
-
       this.isMoving = true;
-      //this.move_tween.start();
       break;
     case "delivery-wait":
       this.speed = 0;
-      //this.move_tween.stop();
       this.isMoving = false;
-      this.anim = "delivery-wait";
       break;
     case "businessman-walk":
       this.speed = this.getSpeed(20000, 2000);
-      this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
-
       this.isMoving = true;
-      //this.move_tween.start();
       break;
     case "businessman-wait":
       this.speed = 0;
-      //this.move_tween.stop();
-
       this.isMoving = false;
       break;
     case "oldman-walk":
       this.speed = this.getSpeed(40000, 5000);
-      this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
-
       this.isMoving = true;
-      //this.move_tween.start();
       break;
     case "oldman-wait":
       this.speed = 0;
-      //this.move_tween.stop();
       this.isMoving = false;
-
       break;
     case "boy-walk":
       this.speed = this.getSpeed(15000, 5000);
-      this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
-
       this.isMoving = true;
-      //this.move_tween.start();
       break;
     case "boy-wait":
       this.speed = 0;
-      //this.move_tween.stop();
       this.isMoving = false;
-
       break;
     case "slick-walk":
       this.speed = this.getSpeed(50000, 5000);
-      this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
       this.isMoving = true;
       break;
     case "slick-wait":
       this.speed = 0;
-      //this.move_tween.stop();
       this.isMoving = false;
-
       break;
     case "hapgood-walk":
       this.speed = this.getSpeed(70000, 5000);
-      this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
       this.isMoving = true;
       break;
     case "hapgood-wait":
       this.speed = 0;
-      //this.move_tween.stop();
       this.isMoving = false;
-
       break;
     case "foreign-walk":
       this.speed = this.getSpeed(20000, 5000);
-      this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
       this.isMoving = true;
       break;
     case "foreign-wait":
       this.speed = 0;
-      //this.move_tween.stop();
       this.isMoving = false;
-
       break;
   }
 
+};
+Pedestrian.prototype.check_animation = function() {
+  this.move_tween = this.game.add.tween(this);
+  var delay = this.game.rnd.integerInRange(1000, 6000);
+  this.Brain();
+  if(this.isMoving){
+    this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
+  }
   this.move_tween.start();
   this.move_tween.onStart.add(function(){
       this.isMoving = this.anim.indexOf("-walk") === true;
@@ -201,7 +268,7 @@ Pedestrian.prototype.check_animation = function() {
       this.anim = this.anim.replace("-walk", "-wait");
       this.movement();},
     this);
-  //this.jog = this.animations.add(anim, [6,7,8,9], 6, true);
+
 
 };
 
@@ -224,8 +291,9 @@ Pedestrian.prototype.movement = function () {
 
 
 
+
 Pedestrian.prototype.update = function () {
-  //this.check_animation();
+  this.life();
   if(this.x == this.goal){
 
     if(this.anim.indexOf("-wait") === -1){
@@ -253,19 +321,7 @@ Pedestrian.prototype.update = function () {
     console.log(this.anim, "CHANGED GOAL", this.speed);
 
   }
-  //if (this.anim != "businessman-wait"){
-  //  this.anim = "businessman-wait";
-  //  this.check_animation();
-  //  this.movement();
-  //}
 
-
-
-
-
-
-
-  //console.log(this.originHeight, this.y);
 };
 
 
