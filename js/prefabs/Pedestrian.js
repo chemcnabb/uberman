@@ -222,6 +222,7 @@ Pedestrian.prototype.life = function () {
     }
 
 
+
     switch (this.thoughts.needs[0].maslow[0].need) {
 
 
