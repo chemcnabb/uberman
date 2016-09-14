@@ -762,7 +762,7 @@ Hero.prototype.alter_movement = function (onGround) {
 
 
   if (onGround) {
-    back.x -= this.body.velocity.x*(0.001);
+    this.game.back.x -= this.body.velocity.x*(0.001);
 
     if (pointer.worldX > this.x) {
       //RIGHT
@@ -777,13 +777,11 @@ Hero.prototype.alter_movement = function (onGround) {
       this.animations.play("alter_walk");
     }
 
-
     this.game.physics.arcade.moveToXY(this, pointer.worldX, this.y, 225);
 
 
   }
-
-
+  
 };
 
 Hero.prototype.uber_movement = function (onGround) {
