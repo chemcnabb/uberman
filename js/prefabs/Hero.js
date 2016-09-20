@@ -15,9 +15,9 @@ Hero = function (game, x, y, frame) {
   this.events.onInputOver.add(this.onSpriteHover, this);
   this.events.onInputOut.add(this.onSpriteBlur, this);
 
-this.zoom_in_on = [];
+  this.zoom_in_on = [];
 
-this.followedObject = this.body;
+  this.followedObject = this.body;
 
   this.game.physics.arcade.enable(this);
   this.directions = ["LEFT", "UP_LEFT", "UP", "UP_RIGHT", "RIGHT", "DOWN_RIGHT", "DOWN", "DOWN_LEFT"];
@@ -29,21 +29,19 @@ this.followedObject = this.body;
   this.alter_walk = this.animations.add("uber_walk", [17, 18, 19, 20, 21, 22], 6, false);
 
   this.alter_walk = this.animations.add("fly_get_ready", [23], 1, true);
-  this.alter_walk = this.animations.add("fly_side", [3,4], 6, false);
+  this.alter_walk = this.animations.add("fly_side", [3, 4], 6, false);
   this.alter_walk = this.animations.add("fly_side_up", [11, 12], 6, true);
   this.alter_walk = this.animations.add("fly_side_down", [13, 14], 6, true);
-  this.alter_walk = this.animations.add("fly_hover", [1,2], 6, true);
-  this.alter_walk = this.animations.add("fly_up", [15,16], 6, true);
-  this.alter_walk = this.animations.add("fly_down", [15,16], 6, true);
-  this.alter_walk = this.animations.add("fly_up_diagonal", [3,4], 6, true);
-  this.alter_walk = this.animations.add("fly_down_diagonal", [3,4], 6, true);
+  this.alter_walk = this.animations.add("fly_hover", [1, 2], 6, true);
+  this.alter_walk = this.animations.add("fly_up", [15, 16], 6, true);
+  this.alter_walk = this.animations.add("fly_down", [15, 16], 6, true);
+  this.alter_walk = this.animations.add("fly_up_diagonal", [3, 4], 6, true);
+  this.alter_walk = this.animations.add("fly_down_diagonal", [3, 4], 6, true);
 
   this.body.gravity.y = 300;
   this.body.collideWorldBounds = true;
   this.body.fixedRotation = true;
   this.anchor.setTo(0.5, 0.5);
-
-
 
 
   this.game.camera.follow(this, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
@@ -56,19 +54,13 @@ Hero.prototype = Object.create(Phaser.Sprite.prototype);
 Hero.prototype.constructor = Hero;
 
 
-
-
-
-
-
 Hero.prototype.spriteMessage = function (sprite, message) {
 
 
+  if (!this.game.input.activePointer.isDown) {
+    this.sprite_message = this.game.add.bitmapText(sprite.x - sprite.body.width * 2, sprite.y - sprite.body.height / 2, 'smallfont', message, 18);
 
-  if(!this.game.input.activePointer.isDown){
-    this.sprite_message = this.game.add.bitmapText(sprite.x-sprite.body.width*2, sprite.y-sprite.body.height/2, 'smallfont',message,18);
-
-    var tween = this.game.add.tween(this.sprite_message).to( { y: (sprite.y-sprite.body.height/2)-10 }, 200, "Linear", true, -1, -1, true).loop(true);
+    var tween = this.game.add.tween(this.sprite_message).to({y: (sprite.y - sprite.body.height / 2) - 10}, 200, "Linear", true, -1, -1, true).loop(true);
 
   }
 
@@ -77,47 +69,45 @@ Hero.prototype.spriteMessage = function (sprite, message) {
 
 Hero.prototype.onSpriteHover = function (sprite, pointer) {
   this.pointerHover = true;
-  if(!this.checkOverlap(this, this.game.door)){
+  if (!this.checkOverlap(this, this.game.door)) {
     var message;
-    if(this.currentState == "uber"){
+    if (this.currentState == "uber") {
       message = "[click] Change into Secret Identity!";
-    }else{
+    } else {
       message = "[click] Change into Uberman!";
     }
 
-    if(this.body.touching.down){
+    if (this.body.touching.down) {
       this.spriteMessage(this, message);
     }
-  }else{
+  } else {
     this.onDoorHover();
   }
-
 
 
 };
 
 Hero.prototype.onSpriteBlur = function (sprite, pointer) {
-  if(this.sprite_message){
+  if (this.sprite_message) {
     this.sprite_message.destroy();
 
   }
   this.pointerHover = false;
 
 
-
 };
-Hero.prototype.onDoorClick = function(door){
-console.log("DOOR CLICKED");
+Hero.prototype.onDoorClick = function (door) {
+  console.log("DOOR CLICKED");
 
-this.zoom_in_on = [door.x, door.y];
+  this.zoom_in_on = [door.x, door.y];
   this.followedObject = door;
 };
-Hero.prototype.onDoorHover = function(){
+Hero.prototype.onDoorHover = function () {
 
   var message;
-  if(this.currentState == "uber"){
+  if (this.currentState == "uber") {
     message = "[click] Change before entering!";
-  }else{
+  } else {
     message = "[click] Enter Daily Planet!";
 
   }
@@ -126,10 +116,10 @@ Hero.prototype.onDoorHover = function(){
   this.spriteMessage(this.game.door, message);
 
 };
-Hero.prototype.onDoorBlur = function(){
+Hero.prototype.onDoorBlur = function () {
 
 };
-Hero.prototype.switch_char = function(sprite) {
+Hero.prototype.switch_char = function (sprite) {
   if (sprite.body.touching.down) {
     console.log("ON GROUND");
     if (sprite.currentState == "uber") {
@@ -137,6 +127,7 @@ Hero.prototype.switch_char = function(sprite) {
       sprite.currentState = "alter";
       sprite.angle = 0;
       sprite.animations.play("alter_stand");
+
     } else {
       console.log("GOING UBER");
       sprite.currentState = "uber";
@@ -146,21 +137,20 @@ Hero.prototype.switch_char = function(sprite) {
 };
 Hero.prototype.onSpriteClick = function (sprite, pointer) {
 
-    if(this.sprite_message) {
-      this.sprite_message.destroy();
-    }
+  if (this.sprite_message) {
+    this.sprite_message.destroy();
+  }
 
-  if(!this.checkOverlap(this, this.game.door)) {
+  if (!this.checkOverlap(this, this.game.door)) {
 
 
     this.switch_char(sprite);
-  }else if(this.currentState != "uber" && this.checkOverlap(this, this.game.door)){
+  } else if (this.currentState != "uber" && this.checkOverlap(this, this.game.door)) {
     this.onDoorClick(this.game.door);
-  }else{
+  } else {
     console.log("SWITCHING");
     this.switch_char(sprite);
   }
-
 
 
 };
@@ -196,9 +186,8 @@ Hero.prototype.alter_movement = function (onGround) {
   var pointer = this.game.input.activePointer;
 
 
-
   if (onGround) {
-    this.game.back.x -= this.body.velocity.x*(0.001);
+    this.game.back.x -= this.body.velocity.x * (0.001);
 
     if (pointer.worldX > this.x) {
       //RIGHT
@@ -225,11 +214,11 @@ Hero.prototype.uber_movement = function (onGround) {
   var direction = this.getCardinal(angle, true);
 
 
-  this.game.back.x -= this.body.velocity.x*(0.001);
-  this.game.fade.x -= this.body.velocity.x*(0.0005);
-  if(!onGround){
-    this.game.back.y -= this.body.velocity.y*(0.001);
-    this.game.fade.y -= this.body.velocity.y*(0.0005);
+  this.game.back.x -= this.body.velocity.x * (0.001);
+  this.game.fade.x -= this.body.velocity.x * (0.0005);
+  if (!onGround) {
+    this.game.back.y -= this.body.velocity.y * (0.001);
+    this.game.fade.y -= this.body.velocity.y * (0.0005);
   }
 
 
@@ -256,26 +245,26 @@ Hero.prototype.uber_movement = function (onGround) {
       this.scale.y = -1;
 
       if (!onGround) {
-        if(this.y>this.game.world.height-1200){
+        if (this.y > this.game.world.height - 1200) {
 
 
-            if(this.animations.currentAnim.name == "fly_down"){
+          if (this.animations.currentAnim.name == "fly_down") {
 
-              this.animations.play("fly_get_ready");
-              this.events.onAnimationComplete.add(function() {
+            this.animations.play("fly_get_ready");
+            this.events.onAnimationComplete.add(function () {
 
-                this.scale.y = 1;
-                this.animations.play("fly_hover");
-              }, this);
-
-
-          }else{
               this.scale.y = 1;
               this.animations.play("fly_hover");
+            }, this);
+
+
+          } else {
+            this.scale.y = 1;
+            this.animations.play("fly_hover");
           }
 
 
-         }else {
+        } else {
           this.animations.play("fly_down");
         }
       } else {
@@ -288,10 +277,10 @@ Hero.prototype.uber_movement = function (onGround) {
     case "UP_LEFT":
 
       this.scale.x = -1;
-      if(!onGround){
+      if (!onGround) {
         this.angle = -45;
         this.animations.play("fly_side_up");
-      }else{
+      } else {
         this.animations.play("uber_stand");
         //this.animations.currentAnim.onComplete.add(function () {
         //  this.angle = -45;
@@ -300,15 +289,14 @@ Hero.prototype.uber_movement = function (onGround) {
       }
 
 
-
       break;
     case "UP_RIGHT":
       this.scale.x = 1;
 
-      if(!onGround){
+      if (!onGround) {
         this.angle = 45;
         this.animations.play("fly_side_up");
-      }else{
+      } else {
         this.animations.play("take_off");
         //this.animations.currentAnim.onComplete.add(function () {
         //  this.angle = 45;
@@ -323,7 +311,7 @@ Hero.prototype.uber_movement = function (onGround) {
         this.angle = 90;
         this.animations.play("fly_side");
       } else {
-        
+
         this.angle = 0;
         this.animations.play("uber_walk");
       }
@@ -382,42 +370,41 @@ Hero.prototype.update = function () {
 
   var onGround = this.body.touching.down;
   var direction;
-if(!this.isZooming) {
+  if (!this.isZooming) {
 
 
-  if (this.game.input.activePointer.isDown) {
-    if (!this.pointerHover) {
+    if (this.game.input.activePointer.isDown) {
+      if (!this.pointerHover) {
+
+        if (this.currentState == "uber") {
+          this.uber_movement(onGround);
+        } else {
+          this.alter_movement(onGround);
+        }
+      } else {
+
+        this.pointerHover = false;
+      }
+
+    }
+
+    if (!this.game.input.activePointer.isDown) {
+      this.angle = 0;
+      this.body.velocity.set(0);
+      direction = null;
 
       if (this.currentState == "uber") {
-        this.uber_movement(onGround);
+        this.scale.y = 1;
+        this.animations.play("fly_hover");
+        if (onGround) {
+          this.animations.play("uber_stand");
+        }
       } else {
-        this.alter_movement(onGround);
+        this.animations.stop();
       }
-    }else{
 
-      this.pointerHover = false;
     }
-
   }
-
-  if (!this.game.input.activePointer.isDown) {
-    this.angle = 0;
-    this.body.velocity.set(0);
-    direction = null;
-
-    if (this.currentState == "uber") {
-      this.scale.y = 1;
-      this.animations.play("fly_hover");
-      if (onGround) {
-        this.animations.play("uber_stand");
-      }
-    } else {
-      this.animations.stop();
-    }
-
-  }
-}
-
 
 
   //console.log(this.originHeight, this.y);

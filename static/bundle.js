@@ -3,31 +3,19 @@ var Uberman = Uberman || {};
 
 
 
-
 Uberman.Boot = function (game) {
 
 };
 
 Uberman.Boot.prototype = {
 
-
   preload: function () {
-
-
-//http://kvazars.com/littera/
-
-
-
 
   },
 
-
   create: function () {
 
-
-
     this.game.physics.startSystem(Phaser.Physics.ARCADE);
-
 
     this.game.scale.fullScreenScaleMode = Phaser.ScaleManager.EXACT_FIT;
     this.game.scale.scaleMode = Phaser.ScaleManager.EXACT_FIT;
@@ -38,13 +26,9 @@ Uberman.Boot.prototype = {
 
     this.game.state.start("Preloader");
 
-
   },
 
   update: function () {
-
-
-
 
   },
   render: function () {
@@ -57,37 +41,31 @@ module.exports = Uberman.Boot;
 },{}],2:[function(require,module,exports){
 var Uberman = Uberman || {};
 
-Hero = require('./prefabs/Hero');
-Pedestrian = require('./prefabs/Pedestrian');
-DayCycle = require('./prefabs/DayCycle');
-Car = require('./prefabs/Car');
-Hud = require('./prefabs/Hud');
+var Hero = require('./prefabs/Hero');
+var Pedestrian = require('./prefabs/Pedestrian');
+var DayCycle = require('./prefabs/DayCycle');
+var Car = require('./prefabs/Car');
+var Hud = require('./prefabs/Hud');
 
 
 Uberman.Game = function (game) {
-
 
 
 };
 
 Uberman.Game.prototype = {
 
-
   preload: function () {
 
-    this.cars_sprites_array = ['car','car2'];
+    this.cars_sprites_array = ['car', 'car2'];
     this.numcars = 10;
-    this.numpredestrians = 25;
-
-//http://kvazars.com/littera/
-
-
+    this.numpredestrians = 50;
 
   },
 
-  randomChoice: function(choices){
+  randomChoice: function (choices) {
 
-    var index =  Math.floor(Math.random() * choices.length);
+    var index = Math.floor(Math.random() * choices.length);
     return choices[index];
 
   },
@@ -116,11 +94,12 @@ Uberman.Game.prototype = {
   addBackgroundSprites: function () {
 
     this.sunSprite = this.game.add.sprite(this.game.world.width - (this.game.world.width / 2), this.game.world.height / 2, 'sun');
+
     this.moonSprite = this.game.add.sprite(this.game.world.width - (this.game.world.width / 2), this.game.world.height, 'moon');
 
     this.orbit = this.game.add.sprite(this.game.world.centerX - (4267 / 2), 1835, 'orbit');
 
-    this.game.fade = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 3000, 'city_fade');
+    this.game.fade = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2000, 'city_fade');
 
     this.game.back = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2100, 'city_background');
 
@@ -130,13 +109,29 @@ Uberman.Game.prototype = {
   animateDayNight: function (backgroundSprite) {
 
     var backgroundSprites = [
-      {sprite: backgroundSprite, from: 0x1f2a27, to: 0xB2DDC8},
-      {sprite: this.game.fade, from: 0x1f2a27, to: 0xB2DDC8},
-      {sprite: this.game.back, from: 0x1f2a27, to: 0xB2DDC8},
-      {sprite: this.fore, from: 0x2f403b, to: 0x96CCBB}
+      {
+        sprite: backgroundSprite,
+        from: 0x1f2a27,
+        to: 0xB2DDC8
+      },
+      {
+        sprite: this.game.fade,
+        from: 0x1f2a27,
+        to: 0xB2DDC8
+      },
+      {
+        sprite: this.game.back,
+        from: 0x1f2a27,
+        to: 0xB2DDC8
+      },
+      {
+        sprite: this.fore,
+        from: 0x2f403b,
+        to: 0x96CCBB
+      }
     ];
 
-    var dayCycle = new DayCycle(this.game, 60000*5);
+    var dayCycle = new DayCycle(this.game, 60000 * 5);
 
     dayCycle.initShading(backgroundSprites);
 
@@ -164,44 +159,58 @@ Uberman.Game.prototype = {
 
     this.cars = this.game.add.group();
 
-
-
     for (var i = 0; i < this.numcars; i++) {
 
-
-
       var left_car = this.randomChoice(this.cars_sprites_array);
+
       var right_car = this.randomChoice(this.cars_sprites_array);
 
-      var car_pos_dict_array = [{"LEFT": {x:this.game.world.width + 270, y:this.game.world.height - 120, car:left_car}},
-        {"RIGHT": {x:this.game.world.x - 300, y:this.game.world.height - 180, car:right_car}}];
-
+      var car_pos_dict_array = [{
+          "LEFT": {
+            x: this.game.world.width + 270,
+            y: this.game.world.height - 120,
+            car: left_car
+          }
+        },
+        {
+          "RIGHT":
+          {
+            x: this.game.world.x - 300,
+            y: this.game.world.height - 180,
+            car: right_car
+          }
+        }
+      ];
 
       var cars_array = this.randomChoice(car_pos_dict_array);
 
-      for(var item in cars_array){
-        if (cars_array.hasOwnProperty(item)) {
-          var car = new Car(this.game, cars_array[item].x, cars_array[item].y, cars_array[item].car, item);
+      for (var item in cars_array) {
 
+        if (cars_array.hasOwnProperty(item)) {
+
+          var car = new Car(this.game, cars_array[item].x, cars_array[item].y, cars_array[item].car, item);
           this.cars.add(car);
+
         }
       }
 
     }
 
-  this.cars.children = this.cars.children.sort(function(a, b) {
-    return (b.direction > a.direction) ? 1 : ((a.direction > b.direction) ? -1 : 0);
-  });
+    this.cars.children = this.cars.children.sort(function (a, b) {
 
-  for(var grp_car in this.cars.children){
-    if (this.cars.hasOwnProperty(grp_car)) {
-      //console.log(grp_car);
-      this.game.add.existing(grp_car);
+      return (b.direction > a.direction) ? 1 : ((a.direction > b.direction) ? -1 : 0);
+
+    });
+
+    for (var grp_car in this.cars.children) {
+
+      if (this.cars.hasOwnProperty(grp_car)) {
+
+        this.game.add.existing(grp_car);
+
+      }
+
     }
-  }
-
-
-
 
 
   },
@@ -209,52 +218,44 @@ Uberman.Game.prototype = {
 
     console.log("GAME");
 
-
-
     var backgroundSprite = this.addGradientBackground();
+
     this.addGround();
+
     this.addBackgroundSprites();
+
     this.animateDayNight(backgroundSprite);
+
     this.game.door = this.game.add.sprite(3785, 7942, 'door');
 
     this.game.physics.arcade.enable(this.game.door);
+
     this.game.door.anchor.setTo(0.5, 0.5);
 
-    this.game.player = new Hero(this.game, this.game.world.centerX, this.game.world.height-260, this.game.world.height/2);
+    this.game.player = new Hero(this.game, this.game.world.centerX, this.game.world.height - 260, this.game.world.height / 2);
 
 
     var pedestrians = this.game.add.group();
     for (var i = 0; i < this.numpredestrians; i++) {
-      var pedestrian = new Pedestrian(this.game, this.game.world.height-260, "pedestrian");
+      var pedestrian = new Pedestrian(this.game, this.game.world.height - 260, "pedestrian");
+      pedestrian.tint = Math.random() * 0xffffff;
       this.game.add.existing(pedestrian);
       pedestrians.add(pedestrian);
     }
 
-
-
-
-
-
-
-
-
-
     this.game.add.existing(this.game.player);
-
-
 
     this.addVehicles();
 
     this.game.hud = new Hud(this.game);
+
     this.game.add.existing(this.game.hud);
 
     cursors = this.game.input.keyboard.createCursorKeys();
 
-
   },
 
   update: function () {
-
 
     this.game.physics.arcade.collide(this.game.player, platforms);
 
@@ -302,6 +303,7 @@ Uberman.MainMenu.prototype = {
 
     var menu_item = this.game.add.bitmapText((this.game.width/2), this.game.height/2-100, 'font',message[1],38);
     menu_item.anchor.set(0.5, 0.5);
+
     var tween = this.game.add.tween(menu_item.scale).to( { x: 1.1, y:1.1 }, 350, Phaser.Easing.Linear.InOut, true, -1, -1, true).loop(true);
     menu_item.inputEnabled = true;
 
@@ -312,14 +314,22 @@ Uberman.MainMenu.prototype = {
 
     var that = this;
     menu_item.events.onInputUp.add(function () {
+
       that.game.add.tween(menu_item.scale).to( { x:0.8, y:0.8 }, 350, Phaser.Easing.Circular.In, true);
+
       var tween = that.game.add.tween(menu_item).to( { y: -100 }, 350, Phaser.Easing.Circular.In, true);
+
       tween.onComplete.add(function(){
+
         that.game.state.start("Game");
+
       });
+
     });
     menu_item.events.onInputOver.add(function () {
+
       console.log("Hover");
+
     });
   },
 
@@ -597,9 +607,9 @@ Hero = function (game, x, y, frame) {
   this.events.onInputOver.add(this.onSpriteHover, this);
   this.events.onInputOut.add(this.onSpriteBlur, this);
 
-this.zoom_in_on = [];
+  this.zoom_in_on = [];
 
-this.followedObject = this.body;
+  this.followedObject = this.body;
 
   this.game.physics.arcade.enable(this);
   this.directions = ["LEFT", "UP_LEFT", "UP", "UP_RIGHT", "RIGHT", "DOWN_RIGHT", "DOWN", "DOWN_LEFT"];
@@ -611,21 +621,19 @@ this.followedObject = this.body;
   this.alter_walk = this.animations.add("uber_walk", [17, 18, 19, 20, 21, 22], 6, false);
 
   this.alter_walk = this.animations.add("fly_get_ready", [23], 1, true);
-  this.alter_walk = this.animations.add("fly_side", [3,4], 6, false);
+  this.alter_walk = this.animations.add("fly_side", [3, 4], 6, false);
   this.alter_walk = this.animations.add("fly_side_up", [11, 12], 6, true);
   this.alter_walk = this.animations.add("fly_side_down", [13, 14], 6, true);
-  this.alter_walk = this.animations.add("fly_hover", [1,2], 6, true);
-  this.alter_walk = this.animations.add("fly_up", [15,16], 6, true);
-  this.alter_walk = this.animations.add("fly_down", [15,16], 6, true);
-  this.alter_walk = this.animations.add("fly_up_diagonal", [3,4], 6, true);
-  this.alter_walk = this.animations.add("fly_down_diagonal", [3,4], 6, true);
+  this.alter_walk = this.animations.add("fly_hover", [1, 2], 6, true);
+  this.alter_walk = this.animations.add("fly_up", [15, 16], 6, true);
+  this.alter_walk = this.animations.add("fly_down", [15, 16], 6, true);
+  this.alter_walk = this.animations.add("fly_up_diagonal", [3, 4], 6, true);
+  this.alter_walk = this.animations.add("fly_down_diagonal", [3, 4], 6, true);
 
   this.body.gravity.y = 300;
   this.body.collideWorldBounds = true;
   this.body.fixedRotation = true;
   this.anchor.setTo(0.5, 0.5);
-
-
 
 
   this.game.camera.follow(this, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
@@ -638,19 +646,13 @@ Hero.prototype = Object.create(Phaser.Sprite.prototype);
 Hero.prototype.constructor = Hero;
 
 
-
-
-
-
-
 Hero.prototype.spriteMessage = function (sprite, message) {
 
 
+  if (!this.game.input.activePointer.isDown) {
+    this.sprite_message = this.game.add.bitmapText(sprite.x - sprite.body.width * 2, sprite.y - sprite.body.height / 2, 'smallfont', message, 18);
 
-  if(!this.game.input.activePointer.isDown){
-    this.sprite_message = this.game.add.bitmapText(sprite.x-sprite.body.width*2, sprite.y-sprite.body.height/2, 'smallfont',message,18);
-
-    var tween = this.game.add.tween(this.sprite_message).to( { y: (sprite.y-sprite.body.height/2)-10 }, 200, "Linear", true, -1, -1, true).loop(true);
+    var tween = this.game.add.tween(this.sprite_message).to({y: (sprite.y - sprite.body.height / 2) - 10}, 200, "Linear", true, -1, -1, true).loop(true);
 
   }
 
@@ -659,47 +661,45 @@ Hero.prototype.spriteMessage = function (sprite, message) {
 
 Hero.prototype.onSpriteHover = function (sprite, pointer) {
   this.pointerHover = true;
-  if(!this.checkOverlap(this, this.game.door)){
+  if (!this.checkOverlap(this, this.game.door)) {
     var message;
-    if(this.currentState == "uber"){
+    if (this.currentState == "uber") {
       message = "[click] Change into Secret Identity!";
-    }else{
+    } else {
       message = "[click] Change into Uberman!";
     }
 
-    if(this.body.touching.down){
+    if (this.body.touching.down) {
       this.spriteMessage(this, message);
     }
-  }else{
+  } else {
     this.onDoorHover();
   }
-
 
 
 };
 
 Hero.prototype.onSpriteBlur = function (sprite, pointer) {
-  if(this.sprite_message){
+  if (this.sprite_message) {
     this.sprite_message.destroy();
 
   }
   this.pointerHover = false;
 
 
-
 };
-Hero.prototype.onDoorClick = function(door){
-console.log("DOOR CLICKED");
+Hero.prototype.onDoorClick = function (door) {
+  console.log("DOOR CLICKED");
 
-this.zoom_in_on = [door.x, door.y];
+  this.zoom_in_on = [door.x, door.y];
   this.followedObject = door;
 };
-Hero.prototype.onDoorHover = function(){
+Hero.prototype.onDoorHover = function () {
 
   var message;
-  if(this.currentState == "uber"){
+  if (this.currentState == "uber") {
     message = "[click] Change before entering!";
-  }else{
+  } else {
     message = "[click] Enter Daily Planet!";
 
   }
@@ -708,10 +708,10 @@ Hero.prototype.onDoorHover = function(){
   this.spriteMessage(this.game.door, message);
 
 };
-Hero.prototype.onDoorBlur = function(){
+Hero.prototype.onDoorBlur = function () {
 
 };
-Hero.prototype.switch_char = function(sprite) {
+Hero.prototype.switch_char = function (sprite) {
   if (sprite.body.touching.down) {
     console.log("ON GROUND");
     if (sprite.currentState == "uber") {
@@ -719,6 +719,7 @@ Hero.prototype.switch_char = function(sprite) {
       sprite.currentState = "alter";
       sprite.angle = 0;
       sprite.animations.play("alter_stand");
+
     } else {
       console.log("GOING UBER");
       sprite.currentState = "uber";
@@ -728,21 +729,20 @@ Hero.prototype.switch_char = function(sprite) {
 };
 Hero.prototype.onSpriteClick = function (sprite, pointer) {
 
-    if(this.sprite_message) {
-      this.sprite_message.destroy();
-    }
+  if (this.sprite_message) {
+    this.sprite_message.destroy();
+  }
 
-  if(!this.checkOverlap(this, this.game.door)) {
+  if (!this.checkOverlap(this, this.game.door)) {
 
 
     this.switch_char(sprite);
-  }else if(this.currentState != "uber" && this.checkOverlap(this, this.game.door)){
+  } else if (this.currentState != "uber" && this.checkOverlap(this, this.game.door)) {
     this.onDoorClick(this.game.door);
-  }else{
+  } else {
     console.log("SWITCHING");
     this.switch_char(sprite);
   }
-
 
 
 };
@@ -778,9 +778,8 @@ Hero.prototype.alter_movement = function (onGround) {
   var pointer = this.game.input.activePointer;
 
 
-
   if (onGround) {
-    this.game.back.x -= this.body.velocity.x*(0.001);
+    this.game.back.x -= this.body.velocity.x * (0.001);
 
     if (pointer.worldX > this.x) {
       //RIGHT
@@ -807,11 +806,11 @@ Hero.prototype.uber_movement = function (onGround) {
   var direction = this.getCardinal(angle, true);
 
 
-  this.game.back.x -= this.body.velocity.x*(0.001);
-  this.game.fade.x -= this.body.velocity.x*(0.0005);
-  if(!onGround){
-    this.game.back.y -= this.body.velocity.y*(0.001);
-    this.game.fade.y -= this.body.velocity.y*(0.0005);
+  this.game.back.x -= this.body.velocity.x * (0.001);
+  this.game.fade.x -= this.body.velocity.x * (0.0005);
+  if (!onGround) {
+    this.game.back.y -= this.body.velocity.y * (0.001);
+    this.game.fade.y -= this.body.velocity.y * (0.0005);
   }
 
 
@@ -838,26 +837,26 @@ Hero.prototype.uber_movement = function (onGround) {
       this.scale.y = -1;
 
       if (!onGround) {
-        if(this.y>this.game.world.height-1200){
+        if (this.y > this.game.world.height - 1200) {
 
 
-            if(this.animations.currentAnim.name == "fly_down"){
+          if (this.animations.currentAnim.name == "fly_down") {
 
-              this.animations.play("fly_get_ready");
-              this.events.onAnimationComplete.add(function() {
+            this.animations.play("fly_get_ready");
+            this.events.onAnimationComplete.add(function () {
 
-                this.scale.y = 1;
-                this.animations.play("fly_hover");
-              }, this);
-
-
-          }else{
               this.scale.y = 1;
               this.animations.play("fly_hover");
+            }, this);
+
+
+          } else {
+            this.scale.y = 1;
+            this.animations.play("fly_hover");
           }
 
 
-         }else {
+        } else {
           this.animations.play("fly_down");
         }
       } else {
@@ -870,10 +869,10 @@ Hero.prototype.uber_movement = function (onGround) {
     case "UP_LEFT":
 
       this.scale.x = -1;
-      if(!onGround){
+      if (!onGround) {
         this.angle = -45;
         this.animations.play("fly_side_up");
-      }else{
+      } else {
         this.animations.play("uber_stand");
         //this.animations.currentAnim.onComplete.add(function () {
         //  this.angle = -45;
@@ -882,15 +881,14 @@ Hero.prototype.uber_movement = function (onGround) {
       }
 
 
-
       break;
     case "UP_RIGHT":
       this.scale.x = 1;
 
-      if(!onGround){
+      if (!onGround) {
         this.angle = 45;
         this.animations.play("fly_side_up");
-      }else{
+      } else {
         this.animations.play("take_off");
         //this.animations.currentAnim.onComplete.add(function () {
         //  this.angle = 45;
@@ -905,7 +903,7 @@ Hero.prototype.uber_movement = function (onGround) {
         this.angle = 90;
         this.animations.play("fly_side");
       } else {
-        
+
         this.angle = 0;
         this.animations.play("uber_walk");
       }
@@ -964,42 +962,41 @@ Hero.prototype.update = function () {
 
   var onGround = this.body.touching.down;
   var direction;
-if(!this.isZooming) {
+  if (!this.isZooming) {
 
 
-  if (this.game.input.activePointer.isDown) {
-    if (!this.pointerHover) {
+    if (this.game.input.activePointer.isDown) {
+      if (!this.pointerHover) {
+
+        if (this.currentState == "uber") {
+          this.uber_movement(onGround);
+        } else {
+          this.alter_movement(onGround);
+        }
+      } else {
+
+        this.pointerHover = false;
+      }
+
+    }
+
+    if (!this.game.input.activePointer.isDown) {
+      this.angle = 0;
+      this.body.velocity.set(0);
+      direction = null;
 
       if (this.currentState == "uber") {
-        this.uber_movement(onGround);
+        this.scale.y = 1;
+        this.animations.play("fly_hover");
+        if (onGround) {
+          this.animations.play("uber_stand");
+        }
       } else {
-        this.alter_movement(onGround);
+        this.animations.stop();
       }
-    }else{
 
-      this.pointerHover = false;
     }
-
   }
-
-  if (!this.game.input.activePointer.isDown) {
-    this.angle = 0;
-    this.body.velocity.set(0);
-    direction = null;
-
-    if (this.currentState == "uber") {
-      this.scale.y = 1;
-      this.animations.play("fly_hover");
-      if (onGround) {
-        this.animations.play("uber_stand");
-      }
-    } else {
-      this.animations.stop();
-    }
-
-  }
-}
-
 
 
   //console.log(this.originHeight, this.y);
@@ -1120,58 +1117,164 @@ Pedestrian = function (game, y, sprite) {
   this.frame = 0;
   this.frames = [];
   this.pedestrian_array = ["oldman-wait","businessman-wait", "delivery-wait","boy-wait", "slick-wait", "hapgood-wait", "foreign-wait"];
-  this.food = this.getRandomRange(0, 100);
-  this.warmth = this.getRandomRange(0, 100);
-  this.money = this.getRandomRange(0, 100);
-  this.water = this.getRandomRange(0, 100);
-  this.security = this.getRandomRange(0, 100);
-  this.friendship = this.getRandomRange(0, 100);
-  this.intimacy = this.getRandomRange(0, 100);
-  this.family = this.getRandomRange(0, 100);
-  this.confidence = this.getRandomRange(0, 100);
-  this.art = this.getRandomRange(0, 100);
-  this.education = this.getRandomRange(0, 100);
+  this.visible = true;
   this.thoughts = {
-    "needs":[
+    "needs": [
       {
-        "maslow":[
-          {"need":"WATER","weight":2.4},
-          {"need":"FOOD","weight":2.1}
-      ], "totalWeight":4.5},
+        "maslow": [
+          {
+            "need": "WATER",
+            "weight": 2.4,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 2.4,
+            "emotion": "I'm THIRSTY",
+            "goal":677,
+            "acts":[
+              this.removePedestrian,
+              this.putBack
+            ]
+          },
+          {
+            "need": "FOOD",
+            "weight": 2.1,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 2.1,
+            "emotion": "I'm HUNGRY",
+            "goal":776,
+            "acts":[
+              this.removePedestrian,
+              this.putBack
+            ]
+          }
+        ], "totalWeight": 4.5
+      },
       {
-        "maslow":[
-          {"need":"SECURITY","weight":1.09},
-          {"need":"MONEY","weight":1.08},
-          {"need":"WARMTH","weight":1.07}
-      ],"totalWeight":4.4 },
+        "maslow": [
+          {
+            "need": "SECURITY",
+            "weight": 1.09,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.09,
+            "emotion": "I'm SCARED",
+            "goal":1700,
+            "acts":[
+              this.removePedestrian,
+              this.putBack
+            ]
+          },
+          {
+            "need": "MONEY",
+            "weight": 1.08,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.08,
+            "emotion": "I'm BROKE",
+            "goal":2300,
+            "acts":[
+              this.removePedestrian,
+              this.putBack
+            ]
+          },
+          {
+            "need": "WARMTH",
+            "weight": 1.07,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.07,
+            "emotion": "I'm COLD",
+            "goal":250,
+            "acts":[
+              this.removePedestrian,
+              this.putBack
+            ]
+          }
+        ],
+        "totalWeight": 4.4
+      },
       {
-        "maslow":[
-          {"need":"FRIENDSHIP","weight":1.06},
-          {"need":"INTIMACY","weight":1.05},
-          {"need":"FAMILY","weight":1.04}
-      ],"totalWeight":2.5},
+        "maslow": [
+          {
+            "need": "FRIENDSHIP",
+            "weight": 1.06,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.06,
+            "emotion": "No one LIKES ME",
+            "goal":90,
+            "acts":[
+              this.removePedestrian,
+              this.putBack
+            ]
+          },
+          {
+            "need": "INTIMACY",
+            "weight": 1.05,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.05,
+            "emotion": "I'm LONELY",
+            "goal":1200,
+            "acts":[
+              this.removePedestrian,
+              this.putBack
+            ]
+          },
+          {
+            "need": "FAMILY",
+            "weight": 1.04,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.04,
+            "emotion": "I have no SUPPORT",
+            "goal":900,
+            "acts":[
+              this.removePedestrian,
+              this.putBack
+            ]
+          }
+        ], "totalWeight": 2.5
+      },
       {
-        "maslow":[
-          {"need":"CONFIDENCE","weight":1.03}
-      ],"totalWeight":1.03},
+        "maslow": [
+          {
+            "need": "CONFIDENCE",
+            "weight": 1.03,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.03,
+            "emotion": "I'm WEAK",
+            "goal":200,
+            "acts":[
+              this.removePedestrian,
+              this.putBack
+            ]
+          }
+        ], "totalWeight": 1.03
+      },
       {
-        "maslow":[
-          {"need":"ART","weight":1.02},
-          {"need":"EDUCATION","weight":1.01}
-      ],"totalWeight":1.03}
-    ],
+        "maslow": [
+          {
+            "need": "ART",
+            "weight": 1.02,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.02,
+            "emotion": "I'm un-CREATIVE",
+            "goal":1500,
+            "acts":[
+              this.removePedestrian,
+              this.putBack
+            ]
+          },
+          {
+            "need": "EDUCATION",
+            "weight": 1.01,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.01,
+            "emotion": "I'm not SMART",
+            "goal":2000,
+            "acts":[
+              this.removePedestrian,
+              this.putBack
+            ]
+          }
+        ], "totalWeight": 1.03
+      }
+    ]
 
-    "waterBaseWeight":2.4,
-    "foodBaseWeight":2.1,
-    "securityBaseWeight":1.09,
-    "moneyBaseWeight":1.08,
-    "warmthBaseWeight":1.07,
-    "friendshipBaseWeight":1.06,
-    "intimacyBaseWeight":1.05,
-    "familyBaseWeight":1.04,
-    "confidenceBaseWeight":1.03,
-    "artBaseWeight":1.02,
-    "educationBaseWeight":1.01
   };
 
   this.direction = this.setDirection();
@@ -1217,6 +1320,25 @@ Pedestrian.prototype.constructor = Pedestrian;
 
 Pedestrian.prototype.spriteMessage = function (sprite, message) {
 
+  console.log("DONE");
+
+
+
+};
+
+Pedestrian.prototype.removePedestrian = function (next, sprite) {
+
+
+console.log("CURRENTLY EATING");
+  sprite.visible = false;
+  sprite.thoughts.needs[0].maslow[0].value = 0;
+  next();
+
+
+};
+
+Pedestrian.prototype.putBack = function () {
+
 
 
 
@@ -1230,6 +1352,10 @@ Pedestrian.prototype.onSpriteHover = function (sprite, pointer) {
 
 };
 
+Pedestrian.prototype.getWeight= function (x,y,i) {
+  return ( (y*(i+1)-y*(i))/(x*(i+1)-x*(i)) - (y*(i)-y*(i-1))/(x*(i)-x*(i-1))/(x*(i+1)-x*(i-1)));
+};
+
 Pedestrian.prototype.getRandomRange= function (low, high) {
 return this.game.rnd.integerInRange(low, high);
 };
@@ -1237,18 +1363,7 @@ Pedestrian.prototype.life = function () {
   //console.log(this.hunger);
 
 
-  this.food += 0.01;
-  this.money -= 0.01;
-  this.water -= 0.01;
-  this.security -= 0.01;
-  this.money -= 0.01;
-  this.warmth -= 0.01;
-  this.friendship -= 0.01;
-  this.intimacy -= 0.01;
-  this.family -= 0.01;
-  this.confidence -= 0.01;
-  this.art -= 0.01;
-  this.education -= 0.01;
+
 
   for ( var i = 0; i < this.thoughts.needs.length; i++)
   {
@@ -1257,139 +1372,51 @@ Pedestrian.prototype.life = function () {
     for(var j = 0; j< needs.maslow.length;j++){
 
       //TODO: adjust calculation of 0.0032 to reflaect maslow hierarchy
-      var modifier = i+1;
-      if(needs.maslow[j].need == "FOOD"){
-        this.thoughts.needs[i].maslow[j].weight = ((this.food * 0.0032)+this.thoughts.foodBaseWeight)*modifier;
-      }
-      if(needs.maslow[j].need == "WATER"){
-        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.water)+this.thoughts.waterBaseWeight)*modifier;
-      }
-      if(needs.maslow[j].need == "SECURITY"){
-        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.security)+this.thoughts.securityBaseWeight)*modifier;
-      }
-      if(needs.maslow[j].need == "MONEY"){
-        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.money )+this.thoughts.moneyBaseWeight)*modifier;
-      }
-      if(needs.maslow[j].need == "WARMTH"){
-        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.warmth)+this.thoughts.warmthBaseWeight)*modifier;
 
-      }
-      if(needs.maslow[j].need == "FRIENDSHIP"){
-        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.friendship)+this.thoughts.friendshipBaseWeight)*modifier;
+        this.thoughts.needs[i].maslow[j].value += 0.01;
+        this.thoughts.needs[i].maslow[j].weight = this.getWeight(this.thoughts.needs[i].maslow[j].baseWeight,this.thoughts.needs[i].maslow[j].value,i);
 
-      }
-      if(needs.maslow[j].need == "INTIMACY"){
-        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.intimacy)+this.thoughts.intimacyBaseWeight)*modifier;
 
-      }
-      if(needs.maslow[j].need == "FAMILY"){
-        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.family)+this.thoughts.familyBaseWeight)*modifier;
-
-      }
-      if(needs.maslow[j].need == "CONFIDENCE"){
-        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.confidence)+this.thoughts.confidenceBaseWeight)*modifier;
-
-      }
-      if(needs.maslow[j].need == "ART"){
-        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.art)+this.thoughts.artBaseWeight)*modifier;
-
-      }
-      if(needs.maslow[j].need == "EDUCATION"){
-        this.thoughts.needs[i].maslow[j].weight = ((0.0032/this.education)+this.thoughts.educationBaseWeight)*modifier;
-
-      }
+      
+      //console.log(needs.maslow[j].need, this.thoughts.needs[i].maslow[j].weight);
     }
 
 
   }
+  
+  //this.goal = this.thoughts.needs[0].maslow[0].goal;
 
 };
-  Pedestrian.prototype.setGoal = function () {
 
-    var need=[], weight=[];
-
-    for ( var i = 0; i < this.thoughts.needs.length; i++)
-    {
-
-      var total = 0;
-      for(var k=0;k<this.thoughts.needs[i].maslow.length;k++){
-        total += this.thoughts.needs[i].maslow[k].weight;
-      }
-      this.thoughts.needs[i].totalWeight = total;
-
-
-
-      this.thoughts.needs[i].maslow.sort( function(a,b){return b.weight - a.weight; } );
-      this.thoughts.needs.sort( function(a,b){return b.totalWeight - a.totalWeight; } );
-
-
+Pedestrian.prototype.sortThoughts = function() {
+  for (var i = 0; i < this.thoughts.needs.length; i++) {
+    var total = 0;
+    for (var k = 0; k < this.thoughts.needs[i].maslow.length; k++) {
+      total += this.thoughts.needs[i].maslow[k].weight;
     }
+    this.thoughts.needs[i].totalWeight = total;
+    //console.log("TOTAL:",this.thoughts.needs[i].totalWeight);
 
+    this.thoughts.needs[i].maslow.sort(function (a, b) {
+      return b.weight - a.weight;
+    });
+    this.thoughts.needs.sort(function (a, b) {
+      return b.totalWeight - a.totalWeight;
+    });
 
-    switch (this.thoughts.needs[0].maslow[0].need) {
+  }
 
+  //this.thoughts.needs[0].maslow[0].value = 100;
+  console.log(this.thoughts.needs[0].maslow[0].emotion);
+};
 
-      case "WATER":
-        console.log("I'm THIRSTY!!", this.thoughts.needs[0].maslow[0].weight);
-        this.water = 100;
-        break;
-      case "SECURITY":
-        console.log("I'm SCARED!!", this.thoughts.needs[0].maslow[0].weight);
-        this.security = 100;
-        break;
-      case "FRIENDSHIP":
-        console.log("I NEED FRIENDS!!", this.thoughts.needs[0].maslow[0].weight);
-        this.friendship = 100;
-        break;
-      case "INTIMACY":
-        console.log("I'm LONELY!!", this.thoughts.needs[0].maslow[0].weight);
-        this.intimacy = 100;
-        break;
-      case "FAMILY":
-        console.log("I HAVE NO SUPPORT!!", this.thoughts.needs[0].maslow[0].weight);
-        this.family = 100;
-        break;
-      case "CONFIDENCE":
-        console.log("I'm INSECURE!!", this.thoughts.needs[0].maslow[0].weight);
-        this.confidence = 100;
-        break;
-      case "ART":
-        console.log("I'm NOT CREATIVE!!", this.thoughts.needs[0].maslow[0].weight);
-        this.art = 100;
-        break;
-      case "EDUCATION":
-        console.log("I'm DUMB!!", this.thoughts.needs[0].maslow[0].weight);
-        this.education = 100;
-        break;
+Pedestrian.prototype.setGoal = function () {
 
-      case "FOOD":
-        console.log("I'm HUNGRY!!", this.thoughts.needs[0].maslow[0].weight);
-        this.food = 0;
-        break;
-
-      case "WARMTH":
-        console.log("I'm COLD!!", this.thoughts.needs[0].maslow[0].weight);
-
-        this.warmth = 100;
-
-        break;
-
-      case "MONEY":
-        console.log("I'm BROKE!!", this.thoughts.needs[0].maslow[0].weight);
-
-        this.money = 100;
-
-        break;
-    }
-
-
-
-
-
-
-    var startXArray = this.randomChoice([[0, this.x+1000], [0, this.x-1000]]);
-    var start = this.getRandomRange(startXArray[0], startXArray[1]);
-return this.getRandomRange(start, this.game.world.width-20);
+  this.sortThoughts();
+  return this.thoughts.needs[0].maslow[0].goal;
+  //var startXArray = this.randomChoice([[0, this.x+1000], [0, this.x-1000]]);
+  //  var start = this.getRandomRange(startXArray[0], startXArray[1]);
+  //  return this.getRandomRange(start, this.game.world.width-20);
 
   };
 
@@ -1413,7 +1440,7 @@ Pedestrian.prototype.getSpeed = function(speed, vary) {
   var return_speed = speed + this.game.rnd.integerInRange(100, vary);
   return (Math.round((Phaser.Math.distance(this.x, this.y, this.goal, this.y) / return_speed) * 1000000));
 };
-Pedestrian.prototype.Brain = function() {
+Pedestrian.prototype.brain = function() {
 
 
   switch (this.anim) {
@@ -1479,10 +1506,16 @@ Pedestrian.prototype.Brain = function() {
 Pedestrian.prototype.check_animation = function() {
   this.move_tween = this.game.add.tween(this);
   var delay = this.game.rnd.integerInRange(1000, 6000);
-  this.Brain();
+  this.brain();
+
+
+
   if(this.isMoving){
     this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
   }
+
+
+
   this.move_tween.start();
   this.move_tween.onStart.add(function(){
       this.isMoving = this.anim.indexOf("-walk") === true;
@@ -1491,7 +1524,9 @@ Pedestrian.prototype.check_animation = function() {
 
   this.move_tween.onComplete.add(function(){
       this.anim = this.anim.replace("-walk", "-wait");
-      this.movement();},
+      this.movement();
+      this.thoughts.needs[0].maslow[0].acts[0](this.thoughts.needs[0].maslow[0].acts[1], this);
+    },
     this);
 
 
@@ -1518,24 +1553,25 @@ Pedestrian.prototype.movement = function () {
 
 
 Pedestrian.prototype.update = function () {
-  this.life();
-  if(this.x == this.goal){
+  if(this.visible){
+    this.life();
+    if(this.x == this.goal){
 
-    if(this.anim.indexOf("-wait") === -1){
-      this.isMoving = false;
-      this.anim = this.anim.replace("-walk", "-wait");
-      this.check_animation();
+      if(this.anim.indexOf("-wait") === -1){
+        this.isMoving = false;
+        this.anim = this.anim.replace("-walk", "-wait");
+        this.check_animation();
+      }
+
     }
 
-  }
 
 
 
 
 
 
-
-  if(this.animations.currentAnim.name.indexOf("-walk") === -1 && this.isMoving !== true){
+    if(this.animations.currentAnim.name.indexOf("-walk") === -1 && this.isMoving !== true){
 
 
       this.anim = this.anim.replace("-wait", "-walk");
@@ -1543,13 +1579,24 @@ Pedestrian.prototype.update = function () {
       this.goal = this.setGoal();
       this.direction = this.setDirection();
       this.check_animation();
-    console.log(this.anim, "CHANGED GOAL", this.speed);
+      //console.log(this.anim, "CHANGED GOAL");
 
+    }
+  }else{
+    this.thoughts.needs[0].maslow[0].value -= 0.01;
+    if(this.thoughts.needs[0].maslow[0].value <= 0){
+      this.thoughts.needs[0].maslow[0].value = 0;
+      this.visible = true;
+      console.log("GOAL COMPLETED");
+      //console.log(this.thoughts);
+    }
   }
+
 
 };
 
 
 
 module.exports = Pedestrian;
+
 },{}]},{},[5]);

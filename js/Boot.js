@@ -2,31 +2,19 @@ var Uberman = Uberman || {};
 
 
 
-
 Uberman.Boot = function (game) {
 
 };
 
 Uberman.Boot.prototype = {
 
-
   preload: function () {
-
-
-//http://kvazars.com/littera/
-
-
-
 
   },
 
-
   create: function () {
 
-
-
     this.game.physics.startSystem(Phaser.Physics.ARCADE);
-
 
     this.game.scale.fullScreenScaleMode = Phaser.ScaleManager.EXACT_FIT;
     this.game.scale.scaleMode = Phaser.ScaleManager.EXACT_FIT;
@@ -37,13 +25,9 @@ Uberman.Boot.prototype = {
 
     this.game.state.start("Preloader");
 
-
   },
 
   update: function () {
-
-
-
 
   },
   render: function () {

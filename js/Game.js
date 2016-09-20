@@ -1,36 +1,30 @@
 var Uberman = Uberman || {};
 
-Hero = require('./prefabs/Hero');
-Pedestrian = require('./prefabs/Pedestrian');
-DayCycle = require('./prefabs/DayCycle');
-Car = require('./prefabs/Car');
-Hud = require('./prefabs/Hud');
+var Hero = require('./prefabs/Hero');
+var Pedestrian = require('./prefabs/Pedestrian');
+var DayCycle = require('./prefabs/DayCycle');
+var Car = require('./prefabs/Car');
+var Hud = require('./prefabs/Hud');
 
 
 Uberman.Game = function (game) {
-
 
 
 };
 
 Uberman.Game.prototype = {
 
-
   preload: function () {
 
-    this.cars_sprites_array = ['car','car2'];
+    this.cars_sprites_array = ['car', 'car2'];
     this.numcars = 10;
-    this.numpredestrians = 25;
-
-//http://kvazars.com/littera/
-
-
+    this.numpredestrians = 50;
 
   },
 
-  randomChoice: function(choices){
+  randomChoice: function (choices) {
 
-    var index =  Math.floor(Math.random() * choices.length);
+    var index = Math.floor(Math.random() * choices.length);
     return choices[index];
 
   },
@@ -59,11 +53,12 @@ Uberman.Game.prototype = {
   addBackgroundSprites: function () {
 
     this.sunSprite = this.game.add.sprite(this.game.world.width - (this.game.world.width / 2), this.game.world.height / 2, 'sun');
+
     this.moonSprite = this.game.add.sprite(this.game.world.width - (this.game.world.width / 2), this.game.world.height, 'moon');
 
     this.orbit = this.game.add.sprite(this.game.world.centerX - (4267 / 2), 1835, 'orbit');
 
-    this.game.fade = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 3000, 'city_fade');
+    this.game.fade = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2000, 'city_fade');
 
     this.game.back = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2100, 'city_background');
 
@@ -73,13 +68,29 @@ Uberman.Game.prototype = {
   animateDayNight: function (backgroundSprite) {
 
     var backgroundSprites = [
-      {sprite: backgroundSprite, from: 0x1f2a27, to: 0xB2DDC8},
-      {sprite: this.game.fade, from: 0x1f2a27, to: 0xB2DDC8},
-      {sprite: this.game.back, from: 0x1f2a27, to: 0xB2DDC8},
-      {sprite: this.fore, from: 0x2f403b, to: 0x96CCBB}
+      {
+        sprite: backgroundSprite,
+        from: 0x1f2a27,
+        to: 0xB2DDC8
+      },
+      {
+        sprite: this.game.fade,
+        from: 0x1f2a27,
+        to: 0xB2DDC8
+      },
+      {
+        sprite: this.game.back,
+        from: 0x1f2a27,
+        to: 0xB2DDC8
+      },
+      {
+        sprite: this.fore,
+        from: 0x2f403b,
+        to: 0x96CCBB
+      }
     ];
 
-    var dayCycle = new DayCycle(this.game, 60000*5);
+    var dayCycle = new DayCycle(this.game, 60000 * 5);
 
     dayCycle.initShading(backgroundSprites);
 
@@ -107,44 +118,58 @@ Uberman.Game.prototype = {
 
     this.cars = this.game.add.group();
 
-
-
     for (var i = 0; i < this.numcars; i++) {
 
-
-
       var left_car = this.randomChoice(this.cars_sprites_array);
+
       var right_car = this.randomChoice(this.cars_sprites_array);
 
-      var car_pos_dict_array = [{"LEFT": {x:this.game.world.width + 270, y:this.game.world.height - 120, car:left_car}},
-        {"RIGHT": {x:this.game.world.x - 300, y:this.game.world.height - 180, car:right_car}}];
-
+      var car_pos_dict_array = [{
+          "LEFT": {
+            x: this.game.world.width + 270,
+            y: this.game.world.height - 120,
+            car: left_car
+          }
+        },
+        {
+          "RIGHT":
+          {
+            x: this.game.world.x - 300,
+            y: this.game.world.height - 180,
+            car: right_car
+          }
+        }
+      ];
 
       var cars_array = this.randomChoice(car_pos_dict_array);
 
-      for(var item in cars_array){
-        if (cars_array.hasOwnProperty(item)) {
-          var car = new Car(this.game, cars_array[item].x, cars_array[item].y, cars_array[item].car, item);
+      for (var item in cars_array) {
 
+        if (cars_array.hasOwnProperty(item)) {
+
+          var car = new Car(this.game, cars_array[item].x, cars_array[item].y, cars_array[item].car, item);
           this.cars.add(car);
+
         }
       }
 
     }
 
-  this.cars.children = this.cars.children.sort(function(a, b) {
-    return (b.direction > a.direction) ? 1 : ((a.direction > b.direction) ? -1 : 0);
-  });
+    this.cars.children = this.cars.children.sort(function (a, b) {
 
-  for(var grp_car in this.cars.children){
-    if (this.cars.hasOwnProperty(grp_car)) {
-      //console.log(grp_car);
-      this.game.add.existing(grp_car);
+      return (b.direction > a.direction) ? 1 : ((a.direction > b.direction) ? -1 : 0);
+
+    });
+
+    for (var grp_car in this.cars.children) {
+
+      if (this.cars.hasOwnProperty(grp_car)) {
+
+        this.game.add.existing(grp_car);
+
+      }
+
     }
-  }
-
-
-
 
 
   },
@@ -152,52 +177,44 @@ Uberman.Game.prototype = {
 
     console.log("GAME");
 
-
-
     var backgroundSprite = this.addGradientBackground();
+
     this.addGround();
+
     this.addBackgroundSprites();
+
     this.animateDayNight(backgroundSprite);
+
     this.game.door = this.game.add.sprite(3785, 7942, 'door');
 
     this.game.physics.arcade.enable(this.game.door);
+
     this.game.door.anchor.setTo(0.5, 0.5);
 
-    this.game.player = new Hero(this.game, this.game.world.centerX, this.game.world.height-260, this.game.world.height/2);
+    this.game.player = new Hero(this.game, this.game.world.centerX, this.game.world.height - 260, this.game.world.height / 2);
 
 
     var pedestrians = this.game.add.group();
     for (var i = 0; i < this.numpredestrians; i++) {
-      var pedestrian = new Pedestrian(this.game, this.game.world.height-260, "pedestrian");
+      var pedestrian = new Pedestrian(this.game, this.game.world.height - 260, "pedestrian");
+      pedestrian.tint = Math.random() * 0xffffff;
       this.game.add.existing(pedestrian);
       pedestrians.add(pedestrian);
     }
 
-
-
-
-
-
-
-
-
-
     this.game.add.existing(this.game.player);
-
-
 
     this.addVehicles();
 
     this.game.hud = new Hud(this.game);
+
     this.game.add.existing(this.game.hud);
 
     cursors = this.game.input.keyboard.createCursorKeys();
 
-
   },
 
   update: function () {
-
 
     this.game.physics.arcade.collide(this.game.player, platforms);
 
