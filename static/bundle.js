@@ -60,6 +60,7 @@ Uberman.Game.prototype = {
     this.cars_sprites_array = ['car', 'car2'];
     this.numcars = 10;
     this.numpredestrians = 50;
+    this.game.dayLength = 60000 * 5;
 
   },
 
@@ -131,7 +132,7 @@ Uberman.Game.prototype = {
       }
     ];
 
-    var dayCycle = new DayCycle(this.game, 60000 * 5);
+    var dayCycle = new DayCycle(this.game, this.game.dayLength);
 
     dayCycle.initShading(backgroundSprites);
 
@@ -359,6 +360,7 @@ Uberman.Preloader.prototype = {
 
   preload: function () {
 
+    this.game.load.bitmapFont('digits', 'font/digits.png', 'font/digits.xml');
     this.game.load.bitmapFont('font', 'font/font.png', 'font/font.xml');
     this.game.load.bitmapFont('smallfont', 'font/small_font.png', 'font/small_font.xml');
 
@@ -1020,6 +1022,25 @@ HUD = function (game,  x, y) {
   this.cameraOffset.setTo(162, 100);
   this.damage = 0;
 
+  var clock = this.game.add.bitmapText(this.game.width/2, 100, 'digits', "", 62);
+
+  clock.anchor.setTo(0.5, 0.5);
+  clock.fixedToCamera = true;
+  clock.align = "center";
+  console.log(clock);
+  var timeValue = {};
+  timeValue.time = 0;
+  this.timeTween = this.game.add.tween(timeValue).to({time:  this.game.dayLength}, this.game.dayLength);
+
+  this.timeTween.onUpdateCallback(function() {
+
+
+    clock.text = ((parseInt(timeValue.time / 1000 / 60 )%12)===0?12:(parseInt(timeValue.time / 1000 / 60 )%12)) + ":" + parseInt(timeValue.time / 1000 % 60).toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false});
+  });
+  this.timeTween.start();
+  //this.clockTween.onComplete.add(this.sunset, this);
+
+  //this.clock.bringToTop();
 
   this.uber_disk = this.game.add.sprite(0,0, 'uber_disk');
   this.uber_disk.anchor.setTo(0.5, 0.5);
@@ -1063,15 +1084,7 @@ HUD.prototype.switchState = function() {
   }
 };
 
-HUD.prototype.create = function () {
 
-
-
-
-  this.game.add.sprite(0, 0, this.bar);
-
-
-};
 
 HUD.prototype.animateDamage = function() {
   if(this.damage > 0){
@@ -1082,6 +1095,10 @@ HUD.prototype.animateDamage = function() {
 };
 HUD.prototype.update = function() {
   this.switchState();
+
+
+
+
   // ensure you clear the context each time you update it or the bar will draw on top of itself
   this.bar.context.clearRect(0, 0, this.bar.width, this.bar.height);
 
@@ -1407,7 +1424,7 @@ Pedestrian.prototype.sortThoughts = function() {
   }
 
   //this.thoughts.needs[0].maslow[0].value = 100;
-  console.log(this.thoughts.needs[0].maslow[0].emotion);
+  //console.log(this.thoughts.needs[0].maslow[0].emotion);
 };
 
 Pedestrian.prototype.setGoal = function () {

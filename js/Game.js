@@ -19,6 +19,7 @@ Uberman.Game.prototype = {
     this.cars_sprites_array = ['car', 'car2'];
     this.numcars = 10;
     this.numpredestrians = 50;
+    this.game.dayLength = 60000 * 5;
 
   },
 
@@ -90,7 +91,7 @@ Uberman.Game.prototype = {
       }
     ];
 
-    var dayCycle = new DayCycle(this.game, 60000 * 5);
+    var dayCycle = new DayCycle(this.game, this.game.dayLength);
 
     dayCycle.initShading(backgroundSprites);
 

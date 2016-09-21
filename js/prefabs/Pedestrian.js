@@ -299,7 +299,7 @@ Pedestrian.prototype.sortThoughts = function() {
   }
 
   //this.thoughts.needs[0].maslow[0].value = 100;
-  console.log(this.thoughts.needs[0].maslow[0].emotion);
+  //console.log(this.thoughts.needs[0].maslow[0].emotion);
 };
 
 Pedestrian.prototype.setGoal = function () {

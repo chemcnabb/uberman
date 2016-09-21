@@ -10,6 +10,7 @@ Uberman.Preloader.prototype = {
 
   preload: function () {
 
+    this.game.load.bitmapFont('digits', 'font/digits.png', 'font/digits.xml');
     this.game.load.bitmapFont('font', 'font/font.png', 'font/font.xml');
     this.game.load.bitmapFont('smallfont', 'font/small_font.png', 'font/small_font.xml');
 
