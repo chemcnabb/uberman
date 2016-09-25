@@ -21,6 +21,31 @@ Uberman.Preloader.prototype = {
     this.game.load.image('city_foreground', 'images/city_foreground.gif', 4267, 2133);
     this.game.load.image('city_background', 'images/city_background.gif', 4267, 2133);
     this.game.load.image('city_fade', 'images/city_fade_background.gif', 4267, 2133);
+
+    // BUILDING 1
+    this.game.load.image('floor_1', 'images/buildings/building1_floor.gif', 428, 25);
+    this.game.load.image('ground_1', 'images/buildings/building1_ground.gif', 428, 98);
+    this.game.load.image('top_1', 'images/buildings/building1_top.gif', 428, 34);
+    // BUILDING 2
+    this.game.load.image('floor_2', 'images/buildings/building2_floor.gif', 273, 52);
+    this.game.load.image('ground_2', 'images/buildings/building2_ground.gif', 273, 41);
+    this.game.load.image('top_2', 'images/buildings/building2_top.gif', 273, 78);
+    // BUILDING 3
+    this.game.load.image('floor_3', 'images/buildings/building3_floor.gif', 301, 136);
+    this.game.load.image('ground_3', 'images/buildings/building3_ground.gif', 301, 50);
+    this.game.load.image('top_3', 'images/buildings/building3_top.gif', 301, 111);
+// BUILDING 4
+    this.game.load.image('floor_4', 'images/buildings/building4_floor.gif', 501, 52);
+    this.game.load.image('ground_4', 'images/buildings/building4_ground.gif', 501, 85);
+    this.game.load.image('top_4', 'images/buildings/building4_top.gif', 501, 166);
+
+    this.game.load.image('bank', 'images/buildings/bank.gif', 288, 279);
+    this.game.load.image('library', 'images/buildings/Library.gif', 596, 231);
+
+    this.game.load.spritesheet('foodshops', 'images/buildings/foodshops.gif', 375, 376, 12);
+
+
+
     this.game.load.image('cape_streak', 'images/cape_streak.png');
     this.game.load.image('sun', 'images/sun.png');
     this.game.load.image('moon', 'images/moon.png');

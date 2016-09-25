@@ -46,6 +46,7 @@ var Pedestrian = require('./prefabs/Pedestrian');
 var DayCycle = require('./prefabs/DayCycle');
 var Car = require('./prefabs/Car');
 var Hud = require('./prefabs/Hud');
+var City = require('./prefabs/City');
 
 
 Uberman.Game = function (game) {
@@ -61,7 +62,7 @@ Uberman.Game.prototype = {
     this.numcars = 10;
     this.numpredestrians = 50;
     this.game.dayLength = 60000 * 5;
-
+    this.game.development = true;
   },
 
   randomChoice: function (choices) {
@@ -100,11 +101,8 @@ Uberman.Game.prototype = {
 
     this.orbit = this.game.add.sprite(this.game.world.centerX - (4267 / 2), 1835, 'orbit');
 
-    this.game.fade = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2000, 'city_fade');
+    this.city = new City(this.game, 0,0);
 
-    this.game.back = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2100, 'city_background');
-
-    this.fore = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2133, 'city_foreground');
 
   },
   animateDayNight: function (backgroundSprite) {
@@ -126,7 +124,7 @@ Uberman.Game.prototype = {
         to: 0xB2DDC8
       },
       {
-        sprite: this.fore,
+        sprite: this.game.fore,
         from: 0x2f403b,
         to: 0x96CCBB
       }
@@ -219,6 +217,8 @@ Uberman.Game.prototype = {
 
     console.log("GAME");
 
+    this.game.player = new Hero(this.game, this.game.world.centerX, this.game.world.height - 260, this.game.world.height / 2);
+
     var backgroundSprite = this.addGradientBackground();
 
     this.addGround();
@@ -233,7 +233,7 @@ Uberman.Game.prototype = {
 
     this.game.door.anchor.setTo(0.5, 0.5);
 
-    this.game.player = new Hero(this.game, this.game.world.centerX, this.game.world.height - 260, this.game.world.height / 2);
+
 
 
     var pedestrians = this.game.add.group();
@@ -259,6 +259,7 @@ Uberman.Game.prototype = {
   update: function () {
 
     this.game.physics.arcade.collide(this.game.player, platforms);
+    this.city.update();
 
   },
   render: function () {
@@ -268,7 +269,7 @@ Uberman.Game.prototype = {
 };
 
 module.exports = Uberman.Game;
-},{"./prefabs/Car":6,"./prefabs/DayCycle":7,"./prefabs/Hero":8,"./prefabs/Hud":9,"./prefabs/Pedestrian":10}],3:[function(require,module,exports){
+},{"./prefabs/Car":7,"./prefabs/City":8,"./prefabs/DayCycle":9,"./prefabs/Hero":10,"./prefabs/Hud":11,"./prefabs/Pedestrian":12}],3:[function(require,module,exports){
 var Uberman = Uberman || {};
 
 
@@ -371,6 +372,31 @@ Uberman.Preloader.prototype = {
     this.game.load.image('city_foreground', 'images/city_foreground.gif', 4267, 2133);
     this.game.load.image('city_background', 'images/city_background.gif', 4267, 2133);
     this.game.load.image('city_fade', 'images/city_fade_background.gif', 4267, 2133);
+
+    // BUILDING 1
+    this.game.load.image('floor_1', 'images/buildings/building1_floor.gif', 428, 25);
+    this.game.load.image('ground_1', 'images/buildings/building1_ground.gif', 428, 98);
+    this.game.load.image('top_1', 'images/buildings/building1_top.gif', 428, 34);
+    // BUILDING 2
+    this.game.load.image('floor_2', 'images/buildings/building2_floor.gif', 273, 52);
+    this.game.load.image('ground_2', 'images/buildings/building2_ground.gif', 273, 41);
+    this.game.load.image('top_2', 'images/buildings/building2_top.gif', 273, 78);
+    // BUILDING 3
+    this.game.load.image('floor_3', 'images/buildings/building3_floor.gif', 301, 136);
+    this.game.load.image('ground_3', 'images/buildings/building3_ground.gif', 301, 50);
+    this.game.load.image('top_3', 'images/buildings/building3_top.gif', 301, 111);
+// BUILDING 4
+    this.game.load.image('floor_4', 'images/buildings/building4_floor.gif', 501, 52);
+    this.game.load.image('ground_4', 'images/buildings/building4_ground.gif', 501, 85);
+    this.game.load.image('top_4', 'images/buildings/building4_top.gif', 501, 166);
+
+    this.game.load.image('bank', 'images/buildings/bank.gif', 288, 279);
+    this.game.load.image('library', 'images/buildings/Library.gif', 596, 231);
+
+    this.game.load.spritesheet('foodshops', 'images/buildings/foodshops.gif', 375, 376, 12);
+
+
+
     this.game.load.image('cape_streak', 'images/cape_streak.png');
     this.game.load.image('sun', 'images/sun.png');
     this.game.load.image('moon', 'images/moon.png');
@@ -450,6 +476,253 @@ var size = {
 })(size);
 
 },{"./Boot":1,"./Game":2,"./MainMenu":3,"./Preloader":4}],6:[function(require,module,exports){
+
+BRAIN = function (game) {
+  this.game = game;
+  this.thoughts = {
+    "needs": [
+      {
+        "maslow": [
+          {
+            "need": "WATER",
+            "weight": 2.4,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 2.4,
+            "emotion": "I'm THIRSTY",
+            "goal":677,
+            "acts":[
+              "CAFE",
+              "RETURN"
+            ]
+          },
+          {
+            "need": "FOOD",
+            "weight": 2.1,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 2.1,
+            "emotion": "I'm HUNGRY",
+            "goal":776,
+            "acts":[
+              "GROCERY",
+              "RETURN"
+            ]
+          }
+        ], "totalWeight": 4.5
+      },
+      {
+        "maslow": [
+          {
+            "need": "SECURITY",
+            "weight": 1.09,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.09,
+            "emotion": "I'm SCARED",
+            "goal":1700,
+            "acts":[
+              "HOME",
+              "RETURN"
+            ]
+          },
+          {
+            "need": "MONEY",
+            "weight": 1.08,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.08,
+            "emotion": "I'm BROKE",
+            "goal":2300,
+            "acts":[
+              "BANK",
+              "RETURN"
+            ]
+          },
+          {
+            "need": "WARMTH",
+            "weight": 1.07,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.07,
+            "emotion": "I'm COLD",
+            "goal":250,
+            "acts":[
+              "INDOORS",
+              "RETURN"
+            ]
+          }
+        ],
+        "totalWeight": 4.4
+      },
+      {
+        "maslow": [
+          {
+            "need": "FRIENDSHIP",
+            "weight": 1.06,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.06,
+            "emotion": "No one LIKES ME",
+            "goal":90,
+            "acts":[
+              "MAKE_FRIEND",
+              "RETURN"
+            ]
+          },
+          {
+            "need": "INTIMACY",
+            "weight": 1.05,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.05,
+            "emotion": "I'm LONELY",
+            "goal":1200,
+            "acts":[
+              "BE_INTIMATE",
+              "RETURN"
+            ]
+          },
+          {
+            "need": "FAMILY",
+            "weight": 1.04,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.04,
+            "emotion": "I have no SUPPORT",
+            "goal":900,
+            "acts":[
+              "HOME",
+              "RETURN"
+            ]
+          }
+        ], "totalWeight": 2.5
+      },
+      {
+        "maslow": [
+          {
+            "need": "CONFIDENCE",
+            "weight": 1.03,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.03,
+            "emotion": "I'm WEAK",
+            "goal":200,
+            "acts":[
+              "GYM",
+              "RETURN"
+            ]
+          }
+        ], "totalWeight": 1.03
+      },
+      {
+        "maslow": [
+          {
+            "need": "ART",
+            "weight": 1.02,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.02,
+            "emotion": "I'm un-CREATIVE",
+            "goal":1500,
+            "acts":[
+              "ART_GALLERY",
+              "RETURN"
+            ]
+          },
+          {
+            "need": "EDUCATION",
+            "weight": 1.01,
+            "value": this.getRandomRange(0, 100),
+            "baseWeight": 1.01,
+            "emotion": "I'm not SMART",
+            "goal":2000,
+            "acts":[
+              "LIBRARY",
+              "RETURN"
+            ]
+          }
+        ], "totalWeight": 1.03
+      }
+    ]
+
+  };
+
+
+};
+
+BRAIN.prototype = Object.create(Phaser.Sprite.prototype);
+BRAIN.prototype.constructor = BRAIN;
+
+BRAIN.prototype.getWeight= function (x,y,i) {
+  return ( (y*(i+1)-y*(i))/(x*(i+1)-x*(i)) - (y*(i)-y*(i-1))/(x*(i)-x*(i-1))/(x*(i+1)-x*(i-1)));
+};
+
+BRAIN.prototype.life = function () {
+  //console.log(this.hunger);
+
+
+
+
+  for ( var i = 0; i < this.thoughts.needs.length; i++)
+  {
+    var needs = this.thoughts.needs[i];
+
+    for(var j = 0; j< needs.maslow.length;j++){
+
+      //TODO: adjust calculation of 0.0032 to reflaect maslow hierarchy
+
+      needs.maslow[j].value += 0.01;
+      needs.maslow[j].weight = this.getWeight(needs.maslow[j].baseWeight,needs.maslow[j].value,i);
+
+
+
+      //console.log(needs.maslow[j].need, this.thoughts.needs[i].maslow[j].weight);
+    }
+
+
+  }
+
+  //this.goal = this.thoughts.needs[0].maslow[0].goal;
+
+};
+
+BRAIN.prototype.sortThoughts = function() {
+  for (var i = 0; i < this.thoughts.needs.length; i++) {
+    var total = 0;
+    var needs = this.thoughts.needs[i];
+    for (var k = 0; k < needs.maslow.length; k++) {
+      total += needs.maslow[k].weight;
+    }
+    needs.totalWeight = total;
+    //console.log("TOTAL:",this.thoughts.needs[i].totalWeight);
+
+    needs.maslow.sort(function (a, b) {
+      return b.weight - a.weight;
+    });
+    this.thoughts.needs.sort(function (a, b) {
+      return b.totalWeight - a.totalWeight;
+    });
+
+  }
+
+  //this.thoughts.needs[0].maslow[0].value = 100;
+  //console.log(this.thoughts.needs[0].maslow[0].emotion);
+};
+
+BRAIN.prototype.getRandomRange= function (low, high) {
+  return this.game.rnd.integerInRange(low, high);
+};
+
+BRAIN.prototype.setGoal = function () {
+
+  this.sortThoughts();
+  return this.thoughts.needs[0].maslow[0].goal;
+
+
+};
+
+BRAIN.prototype.preload = function () {
+
+};
+
+
+BRAIN.prototype.update = function() {
+
+};
+
+module.exports = BRAIN;
+},{}],7:[function(require,module,exports){
 Car = function (game, x, y, frame, direction) {
   Phaser.Sprite.call(this, game, x, y, frame, 0);
   this.direction = direction;
@@ -505,7 +778,206 @@ Car.prototype.update = function () {
 
 
 module.exports = Car;
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
+
+CITY = function (game,  x, y) {
+  Phaser.Sprite.call(this, game, x, y, '', 0);
+  this.game = game;
+  this.buildings = this.game.add.group();
+
+  if (this.game.development === true){
+    this.game.fade = {};
+    this.game.back = {};
+    this.game.fore = {};
+  }else{
+    this.game.fade = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2000, 'city_fade');
+    this.game.back = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2100, 'city_background');
+    this.game.fore = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2133, 'city_foreground');
+  }
+
+
+
+
+  this.building_data = [
+    {"building":1, "ground":37, "floor":25, "top":34, "earth":270, "max_height":40},
+    {"building":2, "ground":0, "floor":52, "top":78, "earth":250, "max_height":45},
+    {"building":3, "ground":0, "floor":136, "top":111, "earth":260, "max_height":20},
+    {"building":4, "ground":0, "floor":52, "top":166, "earth":295, "max_height":20}
+  ];
+  //this.addRandomBuildings();
+  this.addOrderedBuildings();
+  this.addBank();
+  this.addLibrary();
+
+  //console.log(this.buildings);
+  this.addBuildingsToGame();
+
+
+};
+
+CITY.prototype = Object.create(Phaser.Sprite.prototype);
+CITY.prototype.constructor = CITY;
+
+CITY.prototype.shuffleGroupChildren = function (array) {
+
+    for (var i = array.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var temp = array[i];
+      array[i] = array[j];
+      array[j] = temp;
+    }
+
+
+    return array;
+
+};
+CITY.prototype.addBuildingsToGame = function () {
+  var counter = 0;
+  var startX = 200;
+  var buildingWidth;
+
+  var building_data = this.building_data;
+  this.buildings.children = this.shuffleGroupChildren(this.buildings.children);
+  console.log(this.buildings.children.length);
+  for(var bcount = 0;bcount<this.buildings.children.length;bcount++){
+    var sprite = this.buildings.children[bcount];
+    var type = sprite instanceof Phaser.Group;
+    console.log(sprite);
+    if(type === false){
+      sprite.exists = true;
+      sprite.x = startX;
+      //var building = sprite.game.add.existing(sprite);
+      buildingWidth = sprite.width;
+      counter += 1;
+    }else{
+
+      var nextY = sprite.game.world.height-270;
+      var heightCount = 0;
+
+      for(var gcount = 0;gcount<sprite.children.length;gcount++){
+        var deepSprite = sprite.children[gcount];
+
+        var data = deepSprite.key.split("_");
+        var level = data[0];
+        var level_data;
+        var building_num = data[1];
+        deepSprite.exists = true;
+        deepSprite.x = startX;
+
+
+          for(var i=0;i<building_data.length;i++){
+            var building_level = building_data[i];
+
+            if(building_level.building === parseInt(building_num)){
+              level_data = building_level;
+              break;
+
+            }
+          }
+
+        switch(level){
+          case "ground":
+            nextY = sprite.game.world.height - (level_data.earth + level_data.ground);
+            break;
+          case "floor":
+            nextY = (sprite.game.world.height - (level_data.earth + level_data.ground + (level_data.floor * heightCount)));
+            break;
+          case "top":
+            nextY = (sprite.game.world.height - (level_data.earth + level_data.ground + (level_data.floor * (heightCount-1)))-(level_data.top));
+            break;
+        }
+
+        deepSprite.y = nextY;
+
+        buildingWidth = deepSprite.width;
+        counter+=1;
+        heightCount+=1;
+      }
+
+      console.log(nextY);
+
+    }
+
+    startX = startX + buildingWidth+sprite.game.rnd.integerInRange(0, 15);
+  }
+};
+
+
+CITY.prototype.addLibrary = function() {
+  this.buildings.create(0, this.game.world.height - 440, "library", 0,false);
+};
+
+
+CITY.prototype.addBank = function() {
+  this.buildings.create(0, this.game.world.height - 488, "bank", 0,false);
+};
+
+CITY.prototype.addRandomBuildings = function() {
+  for (var i = 0; i < this.game.rnd.integerInRange(10, 100); i++) {
+    var building = this.building_data[this.game.rnd.integerInRange(0, this.building_data.length - 1)];
+    var created_building = this.createBuilding(
+      ["ground_" + building.building, building.ground],
+      ["floor_" + building.building, building.floor],
+      ["top_" + building.building, building.top],
+      building.earth, building.max_height);
+  }
+};
+
+CITY.prototype.addOrderedBuildings = function() {
+  var modifier = 15;
+  for (var i = 0; i < this.building_data.length; i++) {
+
+    var building = this.building_data[i];
+
+    var building_added = this.createBuilding(
+      ["ground_" + building.building, building.ground],
+      ["floor_" + building.building, building.floor],
+      ["top_" + building.building, building.top], building.max_height);
+    //console.log(building_added);
+    this.buildings.add(building_added);
+  }
+};
+
+
+
+
+
+
+
+CITY.prototype.createBuilding = function(ground, floor, top, max_height) {
+
+  var height = this.game.rnd.integerInRange(10, max_height);
+
+  var floored_building = this.game.add.group();
+
+  floored_building.create(0, 0, ground[0], 0,false);
+
+  for (var i = 0; i <height; i++) {
+
+    floored_building.create(0, 0, floor[0], 0,false);
+  }
+
+  floored_building.create(0, 0, top[0], 0,false);
+
+  return floored_building;
+};
+
+
+CITY.prototype.animateDamage = function() {
+
+};
+CITY.prototype.update = function() {
+
+  this.game.back.x -= this.game.player.body.velocity.x * (0.001);
+  this.game.fade.x -= this.game.player.body.velocity.x * (0.0005);
+
+  this.game.back.y -= this.game.player.body.velocity.y * (0.001);
+  this.game.fade.y -= this.game.player.body.velocity.y * (0.0005);
+
+};
+
+module.exports = CITY;
+},{}],9:[function(require,module,exports){
 DayCycle = function (game, dayLength) {
   this.game = game;
   this.dayLength = dayLength;
@@ -591,7 +1063,7 @@ DayCycle.prototype.tweenTint = function (spriteToTween, startColor, endColor, du
 
 
 module.exports = DayCycle;
-},{}],8:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 Hero = function (game, x, y, frame) {
   Phaser.Sprite.call(this, game, x, y, 'hero', frame);
 
@@ -781,7 +1253,7 @@ Hero.prototype.alter_movement = function (onGround) {
 
 
   if (onGround) {
-    this.game.back.x -= this.body.velocity.x * (0.001);
+    //this.game.back.x -= this.body.velocity.x * (0.001);
 
     if (pointer.worldX > this.x) {
       //RIGHT
@@ -808,12 +1280,7 @@ Hero.prototype.uber_movement = function (onGround) {
   var direction = this.getCardinal(angle, true);
 
 
-  this.game.back.x -= this.body.velocity.x * (0.001);
-  this.game.fade.x -= this.body.velocity.x * (0.0005);
-  if (!onGround) {
-    this.game.back.y -= this.body.velocity.y * (0.001);
-    this.game.fade.y -= this.body.velocity.y * (0.0005);
-  }
+
 
 
   this.scale.y = 1;
@@ -1011,7 +1478,7 @@ Hero.prototype.render = function () {
 
 
 module.exports = Hero;
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 
 HUD = function (game,  x, y) {
   // the bar itself
@@ -1022,12 +1489,12 @@ HUD = function (game,  x, y) {
   this.cameraOffset.setTo(162, 100);
   this.damage = 0;
 
-  var clock = this.game.add.bitmapText(this.game.width/2, 100, 'digits', "", 62);
+  var clock = this.game.add.bitmapText(this.game.width/2-55, 50, 'digits', "", 62);
 
-  clock.anchor.setTo(0.5, 0.5);
+  //clock.anchor.setTo(0.5, 0.5);
   clock.fixedToCamera = true;
   clock.align = "center";
-  console.log(clock);
+  //console.log(clock);
   var timeValue = {};
   timeValue.time = 0;
   this.timeTween = this.game.add.tween(timeValue).to({time:  this.game.dayLength}, this.game.dayLength);
@@ -1035,7 +1502,7 @@ HUD = function (game,  x, y) {
   this.timeTween.onUpdateCallback(function() {
 
 
-    clock.text = ((parseInt(timeValue.time / 1000 / 60 )%12)===0?12:(parseInt(timeValue.time / 1000 / 60 )%12)) + ":" + parseInt(timeValue.time / 1000 % 60).toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false});
+    clock.text = (parseInt(timeValue.time / 1000 / 60 )%12 + ":" + parseInt(timeValue.time / 1000 % 60).toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false}));
   });
   this.timeTween.start();
   //this.clockTween.onComplete.add(this.sunset, this);
@@ -1122,7 +1589,8 @@ HUD.prototype.update = function() {
 };
 
 module.exports = HUD;
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
+var Brain = require('./Brain');
 
 Pedestrian = function (game, y, sprite) {
   Phaser.Sprite.call(this, game, game.rnd.integerInRange(-200, game.world.width+200), y, sprite, 0);
@@ -1135,165 +1603,8 @@ Pedestrian = function (game, y, sprite) {
   this.frames = [];
   this.pedestrian_array = ["oldman-wait","businessman-wait", "delivery-wait","boy-wait", "slick-wait", "hapgood-wait", "foreign-wait"];
   this.visible = true;
-  this.thoughts = {
-    "needs": [
-      {
-        "maslow": [
-          {
-            "need": "WATER",
-            "weight": 2.4,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 2.4,
-            "emotion": "I'm THIRSTY",
-            "goal":677,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          },
-          {
-            "need": "FOOD",
-            "weight": 2.1,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 2.1,
-            "emotion": "I'm HUNGRY",
-            "goal":776,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          }
-        ], "totalWeight": 4.5
-      },
-      {
-        "maslow": [
-          {
-            "need": "SECURITY",
-            "weight": 1.09,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.09,
-            "emotion": "I'm SCARED",
-            "goal":1700,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          },
-          {
-            "need": "MONEY",
-            "weight": 1.08,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.08,
-            "emotion": "I'm BROKE",
-            "goal":2300,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          },
-          {
-            "need": "WARMTH",
-            "weight": 1.07,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.07,
-            "emotion": "I'm COLD",
-            "goal":250,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          }
-        ],
-        "totalWeight": 4.4
-      },
-      {
-        "maslow": [
-          {
-            "need": "FRIENDSHIP",
-            "weight": 1.06,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.06,
-            "emotion": "No one LIKES ME",
-            "goal":90,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          },
-          {
-            "need": "INTIMACY",
-            "weight": 1.05,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.05,
-            "emotion": "I'm LONELY",
-            "goal":1200,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          },
-          {
-            "need": "FAMILY",
-            "weight": 1.04,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.04,
-            "emotion": "I have no SUPPORT",
-            "goal":900,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          }
-        ], "totalWeight": 2.5
-      },
-      {
-        "maslow": [
-          {
-            "need": "CONFIDENCE",
-            "weight": 1.03,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.03,
-            "emotion": "I'm WEAK",
-            "goal":200,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          }
-        ], "totalWeight": 1.03
-      },
-      {
-        "maslow": [
-          {
-            "need": "ART",
-            "weight": 1.02,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.02,
-            "emotion": "I'm un-CREATIVE",
-            "goal":1500,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          },
-          {
-            "need": "EDUCATION",
-            "weight": 1.01,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.01,
-            "emotion": "I'm not SMART",
-            "goal":2000,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          }
-        ], "totalWeight": 1.03
-      }
-    ]
 
-  };
-
+  this.ai = new Brain(game);
   this.direction = this.setDirection();
   this.sprite_message = "";
 
@@ -1313,7 +1624,10 @@ Pedestrian = function (game, y, sprite) {
   this.animations.add("foreign-walk", [55,56,57,58,59,60], 6, true);
   this.animations.add("foreign-wait", [61], 6, true);
 
-
+  this.behaviors = {
+    "LEAVE_SCREEN" : this.removePedestrian,
+    "RETURN": this.putBack
+  };
 
   this.anim = this.randomChoice(this.pedestrian_array);
 
@@ -1346,17 +1660,40 @@ Pedestrian.prototype.spriteMessage = function (sprite, message) {
 Pedestrian.prototype.removePedestrian = function (next, sprite) {
 
 
-console.log("CURRENTLY EATING");
+
   sprite.visible = false;
-  sprite.thoughts.needs[0].maslow[0].value = 0;
-  next();
+  sprite.ai.thoughts.needs[0].maslow[0].value = 0;
+  var timer = sprite.game.time.events.add(Phaser.Timer.SECOND*4, next, sprite);
+
+
+
+
+};
+Pedestrian.prototype.spriteMessage = function () {
+  if(this.sprite_message){
+    this.sprite_message.destroy();
+  }
+  var message = this.ai.thoughts.needs[0].maslow[0].emotion;
+
+
+
+    this.sprite_message = this.game.add.bitmapText(this.centerX, this.y - this.height / 2, 'smallfont', message, 18);
+  this.sprite_message.anchor.setTo(0.5,0.5);
+
+
+
+
 
 
 };
 
+
+
+
+
 Pedestrian.prototype.putBack = function () {
 
-
+  this.visible = true;
 
 
 
@@ -1369,73 +1706,10 @@ Pedestrian.prototype.onSpriteHover = function (sprite, pointer) {
 
 };
 
-Pedestrian.prototype.getWeight= function (x,y,i) {
-  return ( (y*(i+1)-y*(i))/(x*(i+1)-x*(i)) - (y*(i)-y*(i-1))/(x*(i)-x*(i-1))/(x*(i+1)-x*(i-1)));
-};
-
-Pedestrian.prototype.getRandomRange= function (low, high) {
-return this.game.rnd.integerInRange(low, high);
-};
-Pedestrian.prototype.life = function () {
-  //console.log(this.hunger);
 
 
 
 
-  for ( var i = 0; i < this.thoughts.needs.length; i++)
-  {
-    var needs = this.thoughts.needs[i];
-
-    for(var j = 0; j< needs.maslow.length;j++){
-
-      //TODO: adjust calculation of 0.0032 to reflaect maslow hierarchy
-
-        this.thoughts.needs[i].maslow[j].value += 0.01;
-        this.thoughts.needs[i].maslow[j].weight = this.getWeight(this.thoughts.needs[i].maslow[j].baseWeight,this.thoughts.needs[i].maslow[j].value,i);
-
-
-      
-      //console.log(needs.maslow[j].need, this.thoughts.needs[i].maslow[j].weight);
-    }
-
-
-  }
-  
-  //this.goal = this.thoughts.needs[0].maslow[0].goal;
-
-};
-
-Pedestrian.prototype.sortThoughts = function() {
-  for (var i = 0; i < this.thoughts.needs.length; i++) {
-    var total = 0;
-    for (var k = 0; k < this.thoughts.needs[i].maslow.length; k++) {
-      total += this.thoughts.needs[i].maslow[k].weight;
-    }
-    this.thoughts.needs[i].totalWeight = total;
-    //console.log("TOTAL:",this.thoughts.needs[i].totalWeight);
-
-    this.thoughts.needs[i].maslow.sort(function (a, b) {
-      return b.weight - a.weight;
-    });
-    this.thoughts.needs.sort(function (a, b) {
-      return b.totalWeight - a.totalWeight;
-    });
-
-  }
-
-  //this.thoughts.needs[0].maslow[0].value = 100;
-  //console.log(this.thoughts.needs[0].maslow[0].emotion);
-};
-
-Pedestrian.prototype.setGoal = function () {
-
-  this.sortThoughts();
-  return this.thoughts.needs[0].maslow[0].goal;
-  //var startXArray = this.randomChoice([[0, this.x+1000], [0, this.x-1000]]);
-  //  var start = this.getRandomRange(startXArray[0], startXArray[1]);
-  //  return this.getRandomRange(start, this.game.world.width-20);
-
-  };
 
 Pedestrian.prototype.setDirection = function () {
 
@@ -1542,7 +1816,9 @@ Pedestrian.prototype.check_animation = function() {
   this.move_tween.onComplete.add(function(){
       this.anim = this.anim.replace("-walk", "-wait");
       this.movement();
-      this.thoughts.needs[0].maslow[0].acts[0](this.thoughts.needs[0].maslow[0].acts[1], this);
+      //console.log(this.ai);
+      //this.behaviors[this.ai.thoughts.needs[0].maslow[0].acts[0]](this.behaviors[this.ai.thoughts.needs[0].maslow[0].acts[1]], this);
+      this.removePedestrian(this.putBack, this);
     },
     this);
 
@@ -1570,8 +1846,11 @@ Pedestrian.prototype.movement = function () {
 
 
 Pedestrian.prototype.update = function () {
+
+  this.spriteMessage();
+
   if(this.visible){
-    this.life();
+    this.ai.life();
     if(this.x == this.goal){
 
       if(this.anim.indexOf("-wait") === -1){
@@ -1593,16 +1872,16 @@ Pedestrian.prototype.update = function () {
 
       this.anim = this.anim.replace("-wait", "-walk");
 
-      this.goal = this.setGoal();
+      this.goal = this.ai.setGoal();
       this.direction = this.setDirection();
       this.check_animation();
       //console.log(this.anim, "CHANGED GOAL");
 
     }
   }else{
-    this.thoughts.needs[0].maslow[0].value -= 0.01;
-    if(this.thoughts.needs[0].maslow[0].value <= 0){
-      this.thoughts.needs[0].maslow[0].value = 0;
+    this.ai.thoughts.needs[0].maslow[0].value -= 0.01;
+    if(this.ai.thoughts.needs[0].maslow[0].value <= 0){
+      this.ai.thoughts.needs[0].maslow[0].value = 0;
       this.visible = true;
       console.log("GOAL COMPLETED");
       //console.log(this.thoughts);
@@ -1616,4 +1895,4 @@ Pedestrian.prototype.update = function () {
 
 module.exports = Pedestrian;
 
-},{}]},{},[5]);
+},{"./Brain":6}]},{},[5]);

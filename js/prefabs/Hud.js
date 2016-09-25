@@ -8,12 +8,12 @@ HUD = function (game,  x, y) {
   this.cameraOffset.setTo(162, 100);
   this.damage = 0;
 
-  var clock = this.game.add.bitmapText(this.game.width/2, 100, 'digits', "", 62);
+  var clock = this.game.add.bitmapText(this.game.width/2-55, 50, 'digits', "", 62);
 
-  clock.anchor.setTo(0.5, 0.5);
+  //clock.anchor.setTo(0.5, 0.5);
   clock.fixedToCamera = true;
   clock.align = "center";
-  console.log(clock);
+  //console.log(clock);
   var timeValue = {};
   timeValue.time = 0;
   this.timeTween = this.game.add.tween(timeValue).to({time:  this.game.dayLength}, this.game.dayLength);
@@ -21,7 +21,7 @@ HUD = function (game,  x, y) {
   this.timeTween.onUpdateCallback(function() {
 
 
-    clock.text = ((parseInt(timeValue.time / 1000 / 60 )%12)===0?12:(parseInt(timeValue.time / 1000 / 60 )%12)) + ":" + parseInt(timeValue.time / 1000 % 60).toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false});
+    clock.text = (parseInt(timeValue.time / 1000 / 60 )%12 + ":" + parseInt(timeValue.time / 1000 % 60).toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false}));
   });
   this.timeTween.start();
   //this.clockTween.onComplete.add(this.sunset, this);

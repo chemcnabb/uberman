@@ -187,7 +187,7 @@ Hero.prototype.alter_movement = function (onGround) {
 
 
   if (onGround) {
-    this.game.back.x -= this.body.velocity.x * (0.001);
+    //this.game.back.x -= this.body.velocity.x * (0.001);
 
     if (pointer.worldX > this.x) {
       //RIGHT
@@ -214,12 +214,7 @@ Hero.prototype.uber_movement = function (onGround) {
   var direction = this.getCardinal(angle, true);
 
 
-  this.game.back.x -= this.body.velocity.x * (0.001);
-  this.game.fade.x -= this.body.velocity.x * (0.0005);
-  if (!onGround) {
-    this.game.back.y -= this.body.velocity.y * (0.001);
-    this.game.fade.y -= this.body.velocity.y * (0.0005);
-  }
+
 
 
   this.scale.y = 1;

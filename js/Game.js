@@ -5,6 +5,7 @@ var Pedestrian = require('./prefabs/Pedestrian');
 var DayCycle = require('./prefabs/DayCycle');
 var Car = require('./prefabs/Car');
 var Hud = require('./prefabs/Hud');
+var City = require('./prefabs/City');
 
 
 Uberman.Game = function (game) {
@@ -20,7 +21,7 @@ Uberman.Game.prototype = {
     this.numcars = 10;
     this.numpredestrians = 50;
     this.game.dayLength = 60000 * 5;
-
+    this.game.development = true;
   },
 
   randomChoice: function (choices) {
@@ -59,11 +60,8 @@ Uberman.Game.prototype = {
 
     this.orbit = this.game.add.sprite(this.game.world.centerX - (4267 / 2), 1835, 'orbit');
 
-    this.game.fade = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2000, 'city_fade');
+    this.city = new City(this.game, 0,0);
 
-    this.game.back = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2100, 'city_background');
-
-    this.fore = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2133, 'city_foreground');
 
   },
   animateDayNight: function (backgroundSprite) {
@@ -85,7 +83,7 @@ Uberman.Game.prototype = {
         to: 0xB2DDC8
       },
       {
-        sprite: this.fore,
+        sprite: this.game.fore,
         from: 0x2f403b,
         to: 0x96CCBB
       }
@@ -178,6 +176,8 @@ Uberman.Game.prototype = {
 
     console.log("GAME");
 
+    this.game.player = new Hero(this.game, this.game.world.centerX, this.game.world.height - 260, this.game.world.height / 2);
+
     var backgroundSprite = this.addGradientBackground();
 
     this.addGround();
@@ -192,7 +192,7 @@ Uberman.Game.prototype = {
 
     this.game.door.anchor.setTo(0.5, 0.5);
 
-    this.game.player = new Hero(this.game, this.game.world.centerX, this.game.world.height - 260, this.game.world.height / 2);
+
 
 
     var pedestrians = this.game.add.group();
@@ -218,6 +218,7 @@ Uberman.Game.prototype = {
   update: function () {
 
     this.game.physics.arcade.collide(this.game.player, platforms);
+    this.city.update();
 
   },
   render: function () {

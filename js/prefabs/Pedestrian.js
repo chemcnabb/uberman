@@ -1,3 +1,4 @@
+var Brain = require('./Brain');
 
 Pedestrian = function (game, y, sprite) {
   Phaser.Sprite.call(this, game, game.rnd.integerInRange(-200, game.world.width+200), y, sprite, 0);
@@ -10,165 +11,8 @@ Pedestrian = function (game, y, sprite) {
   this.frames = [];
   this.pedestrian_array = ["oldman-wait","businessman-wait", "delivery-wait","boy-wait", "slick-wait", "hapgood-wait", "foreign-wait"];
   this.visible = true;
-  this.thoughts = {
-    "needs": [
-      {
-        "maslow": [
-          {
-            "need": "WATER",
-            "weight": 2.4,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 2.4,
-            "emotion": "I'm THIRSTY",
-            "goal":677,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          },
-          {
-            "need": "FOOD",
-            "weight": 2.1,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 2.1,
-            "emotion": "I'm HUNGRY",
-            "goal":776,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          }
-        ], "totalWeight": 4.5
-      },
-      {
-        "maslow": [
-          {
-            "need": "SECURITY",
-            "weight": 1.09,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.09,
-            "emotion": "I'm SCARED",
-            "goal":1700,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          },
-          {
-            "need": "MONEY",
-            "weight": 1.08,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.08,
-            "emotion": "I'm BROKE",
-            "goal":2300,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          },
-          {
-            "need": "WARMTH",
-            "weight": 1.07,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.07,
-            "emotion": "I'm COLD",
-            "goal":250,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          }
-        ],
-        "totalWeight": 4.4
-      },
-      {
-        "maslow": [
-          {
-            "need": "FRIENDSHIP",
-            "weight": 1.06,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.06,
-            "emotion": "No one LIKES ME",
-            "goal":90,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          },
-          {
-            "need": "INTIMACY",
-            "weight": 1.05,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.05,
-            "emotion": "I'm LONELY",
-            "goal":1200,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          },
-          {
-            "need": "FAMILY",
-            "weight": 1.04,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.04,
-            "emotion": "I have no SUPPORT",
-            "goal":900,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          }
-        ], "totalWeight": 2.5
-      },
-      {
-        "maslow": [
-          {
-            "need": "CONFIDENCE",
-            "weight": 1.03,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.03,
-            "emotion": "I'm WEAK",
-            "goal":200,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          }
-        ], "totalWeight": 1.03
-      },
-      {
-        "maslow": [
-          {
-            "need": "ART",
-            "weight": 1.02,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.02,
-            "emotion": "I'm un-CREATIVE",
-            "goal":1500,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          },
-          {
-            "need": "EDUCATION",
-            "weight": 1.01,
-            "value": this.getRandomRange(0, 100),
-            "baseWeight": 1.01,
-            "emotion": "I'm not SMART",
-            "goal":2000,
-            "acts":[
-              this.removePedestrian,
-              this.putBack
-            ]
-          }
-        ], "totalWeight": 1.03
-      }
-    ]
 
-  };
-
+  this.ai = new Brain(game);
   this.direction = this.setDirection();
   this.sprite_message = "";
 
@@ -188,7 +32,10 @@ Pedestrian = function (game, y, sprite) {
   this.animations.add("foreign-walk", [55,56,57,58,59,60], 6, true);
   this.animations.add("foreign-wait", [61], 6, true);
 
-
+  this.behaviors = {
+    "LEAVE_SCREEN" : this.removePedestrian,
+    "RETURN": this.putBack
+  };
 
   this.anim = this.randomChoice(this.pedestrian_array);
 
@@ -221,17 +68,40 @@ Pedestrian.prototype.spriteMessage = function (sprite, message) {
 Pedestrian.prototype.removePedestrian = function (next, sprite) {
 
 
-console.log("CURRENTLY EATING");
+
   sprite.visible = false;
-  sprite.thoughts.needs[0].maslow[0].value = 0;
-  next();
+  sprite.ai.thoughts.needs[0].maslow[0].value = 0;
+  var timer = sprite.game.time.events.add(Phaser.Timer.SECOND*4, next, sprite);
+
+
+
+
+};
+Pedestrian.prototype.spriteMessage = function () {
+  if(this.sprite_message){
+    this.sprite_message.destroy();
+  }
+  var message = this.ai.thoughts.needs[0].maslow[0].emotion;
+
+
+
+    this.sprite_message = this.game.add.bitmapText(this.centerX, this.y - this.height / 2, 'smallfont', message, 18);
+  this.sprite_message.anchor.setTo(0.5,0.5);
+
+
+
+
 
 
 };
 
+
+
+
+
 Pedestrian.prototype.putBack = function () {
 
-
+  this.visible = true;
 
 
 
@@ -244,73 +114,10 @@ Pedestrian.prototype.onSpriteHover = function (sprite, pointer) {
 
 };
 
-Pedestrian.prototype.getWeight= function (x,y,i) {
-  return ( (y*(i+1)-y*(i))/(x*(i+1)-x*(i)) - (y*(i)-y*(i-1))/(x*(i)-x*(i-1))/(x*(i+1)-x*(i-1)));
-};
-
-Pedestrian.prototype.getRandomRange= function (low, high) {
-return this.game.rnd.integerInRange(low, high);
-};
-Pedestrian.prototype.life = function () {
-  //console.log(this.hunger);
 
 
 
 
-  for ( var i = 0; i < this.thoughts.needs.length; i++)
-  {
-    var needs = this.thoughts.needs[i];
-
-    for(var j = 0; j< needs.maslow.length;j++){
-
-      //TODO: adjust calculation of 0.0032 to reflaect maslow hierarchy
-
-        this.thoughts.needs[i].maslow[j].value += 0.01;
-        this.thoughts.needs[i].maslow[j].weight = this.getWeight(this.thoughts.needs[i].maslow[j].baseWeight,this.thoughts.needs[i].maslow[j].value,i);
-
-
-      
-      //console.log(needs.maslow[j].need, this.thoughts.needs[i].maslow[j].weight);
-    }
-
-
-  }
-  
-  //this.goal = this.thoughts.needs[0].maslow[0].goal;
-
-};
-
-Pedestrian.prototype.sortThoughts = function() {
-  for (var i = 0; i < this.thoughts.needs.length; i++) {
-    var total = 0;
-    for (var k = 0; k < this.thoughts.needs[i].maslow.length; k++) {
-      total += this.thoughts.needs[i].maslow[k].weight;
-    }
-    this.thoughts.needs[i].totalWeight = total;
-    //console.log("TOTAL:",this.thoughts.needs[i].totalWeight);
-
-    this.thoughts.needs[i].maslow.sort(function (a, b) {
-      return b.weight - a.weight;
-    });
-    this.thoughts.needs.sort(function (a, b) {
-      return b.totalWeight - a.totalWeight;
-    });
-
-  }
-
-  //this.thoughts.needs[0].maslow[0].value = 100;
-  //console.log(this.thoughts.needs[0].maslow[0].emotion);
-};
-
-Pedestrian.prototype.setGoal = function () {
-
-  this.sortThoughts();
-  return this.thoughts.needs[0].maslow[0].goal;
-  //var startXArray = this.randomChoice([[0, this.x+1000], [0, this.x-1000]]);
-  //  var start = this.getRandomRange(startXArray[0], startXArray[1]);
-  //  return this.getRandomRange(start, this.game.world.width-20);
-
-  };
 
 Pedestrian.prototype.setDirection = function () {
 
@@ -417,7 +224,9 @@ Pedestrian.prototype.check_animation = function() {
   this.move_tween.onComplete.add(function(){
       this.anim = this.anim.replace("-walk", "-wait");
       this.movement();
-      this.thoughts.needs[0].maslow[0].acts[0](this.thoughts.needs[0].maslow[0].acts[1], this);
+      //console.log(this.ai);
+      //this.behaviors[this.ai.thoughts.needs[0].maslow[0].acts[0]](this.behaviors[this.ai.thoughts.needs[0].maslow[0].acts[1]], this);
+      this.removePedestrian(this.putBack, this);
     },
     this);
 
@@ -445,8 +254,11 @@ Pedestrian.prototype.movement = function () {
 
 
 Pedestrian.prototype.update = function () {
+
+  this.spriteMessage();
+
   if(this.visible){
-    this.life();
+    this.ai.life();
     if(this.x == this.goal){
 
       if(this.anim.indexOf("-wait") === -1){
@@ -468,16 +280,16 @@ Pedestrian.prototype.update = function () {
 
       this.anim = this.anim.replace("-wait", "-walk");
 
-      this.goal = this.setGoal();
+      this.goal = this.ai.setGoal();
       this.direction = this.setDirection();
       this.check_animation();
       //console.log(this.anim, "CHANGED GOAL");
 
     }
   }else{
-    this.thoughts.needs[0].maslow[0].value -= 0.01;
-    if(this.thoughts.needs[0].maslow[0].value <= 0){
-      this.thoughts.needs[0].maslow[0].value = 0;
+    this.ai.thoughts.needs[0].maslow[0].value -= 0.01;
+    if(this.ai.thoughts.needs[0].maslow[0].value <= 0){
+      this.ai.thoughts.needs[0].maslow[0].value = 0;
       this.visible = true;
       console.log("GOAL COMPLETED");
       //console.log(this.thoughts);
