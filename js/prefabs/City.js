@@ -3,16 +3,16 @@ CITY = function (game,  x, y) {
   Phaser.Sprite.call(this, game, x, y, '', 0);
   this.game = game;
   this.buildings = this.game.add.group();
+  this.game.doors = {};
+  //if (this.game.development === true){
+   this.game.fade = {};
+  //  this.game.back = {};
+   //this.game.fore = {};
+  //}else{
+   // this.game.fade = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2000, 'city_fade');
 
-  if (this.game.development === true){
-    this.game.fade = {};
-    this.game.back = {};
-    this.game.fore = {};
-  }else{
-    this.game.fade = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2000, 'city_fade');
-    this.game.back = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2100, 'city_background');
-    this.game.fore = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2133, 'city_foreground');
-  }
+
+  //}
 
 
 
@@ -57,14 +57,17 @@ CITY.prototype.addBuildingsToGame = function () {
 
   var building_data = this.building_data;
   this.buildings.children = this.shuffleGroupChildren(this.buildings.children);
-  console.log(this.buildings.children.length);
+
   for(var bcount = 0;bcount<this.buildings.children.length;bcount++){
     var sprite = this.buildings.children[bcount];
     var type = sprite instanceof Phaser.Group;
-    console.log(sprite);
+
     if(type === false){
       sprite.exists = true;
       sprite.x = startX;
+      this.game.doors[sprite.key] = this.game.add.sprite(sprite.centerX, sprite.y+sprite.height-40, 'door');
+      this.game.doors[sprite.key].anchor.setTo(0.5,0.5);
+
       //var building = sprite.game.add.existing(sprite);
       buildingWidth = sprite.width;
       counter += 1;
@@ -113,7 +116,6 @@ CITY.prototype.addBuildingsToGame = function () {
         heightCount+=1;
       }
 
-      console.log(nextY);
 
     }
 

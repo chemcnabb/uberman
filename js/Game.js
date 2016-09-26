@@ -19,7 +19,7 @@ Uberman.Game.prototype = {
 
     this.cars_sprites_array = ['car', 'car2'];
     this.numcars = 10;
-    this.numpredestrians = 50;
+    this.numpredestrians = 25;
     this.game.dayLength = 60000 * 5;
     this.game.development = true;
   },
@@ -59,7 +59,8 @@ Uberman.Game.prototype = {
     this.moonSprite = this.game.add.sprite(this.game.world.width - (this.game.world.width / 2), this.game.world.height, 'moon');
 
     this.orbit = this.game.add.sprite(this.game.world.centerX - (4267 / 2), 1835, 'orbit');
-
+    this.game.back = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2100, 'city_background');
+    this.game.fore = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2133, 'city_foreground');
     this.city = new City(this.game, 0,0);
 
 
@@ -186,11 +187,8 @@ Uberman.Game.prototype = {
 
     this.animateDayNight(backgroundSprite);
 
-    this.game.door = this.game.add.sprite(3785, 7942, 'door');
 
-    this.game.physics.arcade.enable(this.game.door);
 
-    this.game.door.anchor.setTo(0.5, 0.5);
 
 
 

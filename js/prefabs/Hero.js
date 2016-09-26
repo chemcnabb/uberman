@@ -69,7 +69,7 @@ Hero.prototype.spriteMessage = function (sprite, message) {
 
 Hero.prototype.onSpriteHover = function (sprite, pointer) {
   this.pointerHover = true;
-  if (!this.checkOverlap(this, this.game.door)) {
+
     var message;
     if (this.currentState == "uber") {
       message = "[click] Change into Secret Identity!";
@@ -80,9 +80,6 @@ Hero.prototype.onSpriteHover = function (sprite, pointer) {
     if (this.body.touching.down) {
       this.spriteMessage(this, message);
     }
-  } else {
-    this.onDoorHover();
-  }
 
 
 };

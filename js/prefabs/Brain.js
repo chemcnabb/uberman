@@ -13,7 +13,7 @@ BRAIN = function (game) {
             "emotion": "I'm THIRSTY",
             "goal":677,
             "acts":[
-              "CAFE",
+              "library",
               "RETURN"
             ]
           },
@@ -25,7 +25,7 @@ BRAIN = function (game) {
             "emotion": "I'm HUNGRY",
             "goal":776,
             "acts":[
-              "GROCERY",
+              "bank",
               "RETURN"
             ]
           }
@@ -41,7 +41,7 @@ BRAIN = function (game) {
             "emotion": "I'm SCARED",
             "goal":1700,
             "acts":[
-              "HOME",
+              "library",
               "RETURN"
             ]
           },
@@ -65,7 +65,7 @@ BRAIN = function (game) {
             "emotion": "I'm COLD",
             "goal":250,
             "acts":[
-              "INDOORS",
+              "library",
               "RETURN"
             ]
           }
@@ -82,7 +82,7 @@ BRAIN = function (game) {
             "emotion": "No one LIKES ME",
             "goal":90,
             "acts":[
-              "MAKE_FRIEND",
+              "bank",
               "RETURN"
             ]
           },
@@ -94,7 +94,7 @@ BRAIN = function (game) {
             "emotion": "I'm LONELY",
             "goal":1200,
             "acts":[
-              "BE_INTIMATE",
+              "library",
               "RETURN"
             ]
           },
@@ -106,7 +106,7 @@ BRAIN = function (game) {
             "emotion": "I have no SUPPORT",
             "goal":900,
             "acts":[
-              "HOME",
+              "bank",
               "RETURN"
             ]
           }
@@ -122,7 +122,7 @@ BRAIN = function (game) {
             "emotion": "I'm WEAK",
             "goal":200,
             "acts":[
-              "GYM",
+              "library",
               "RETURN"
             ]
           }
@@ -138,7 +138,7 @@ BRAIN = function (game) {
             "emotion": "I'm un-CREATIVE",
             "goal":1500,
             "acts":[
-              "ART_GALLERY",
+              "bank",
               "RETURN"
             ]
           },
@@ -174,7 +174,7 @@ BRAIN.prototype.life = function () {
   //console.log(this.hunger);
 
 
-
+console.log("AI Life");
 
   for ( var i = 0; i < this.thoughts.needs.length; i++)
   {
@@ -229,7 +229,8 @@ BRAIN.prototype.getRandomRange= function (low, high) {
 BRAIN.prototype.setGoal = function () {
 
   this.sortThoughts();
-  return this.thoughts.needs[0].maslow[0].goal;
+  return this.game.doors[this.thoughts.needs[0].maslow[0].acts[0].toLowerCase()].x;
+  //return this.thoughts.needs[0].maslow[0].goal;
 
 
 };
