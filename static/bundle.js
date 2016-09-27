@@ -60,7 +60,7 @@ Uberman.Game.prototype = {
 
     this.cars_sprites_array = ['car', 'car2'];
     this.numcars = 10;
-    this.numpredestrians = 25;
+    this.numpredestrians = 10;
     this.game.dayLength = 60000 * 5;
     this.game.development = true;
   },
@@ -391,8 +391,13 @@ Uberman.Preloader.prototype = {
     this.game.load.image('bank', 'images/buildings/bank.gif', 288, 279);
     this.game.load.image('library', 'images/buildings/Library.gif', 596, 231);
 
-    this.game.load.spritesheet('foodshops', 'images/buildings/foodshops.gif', 375, 376, 12);
 
+
+
+
+    this.game.load.image('bakery', 'images/buildings/bakery.gif');
+    this.game.load.image('cafe', 'images/buildings/cafe.gif');
+    this.game.load.image('bookstore', 'images/buildings/bookstore.gif');
 
 
     this.game.load.image('cape_streak', 'images/cape_streak.png');
@@ -489,7 +494,7 @@ BRAIN = function (game) {
             "emotion": "I'm THIRSTY",
             "goal":677,
             "acts":[
-              "library",
+              "cafe",
               "RETURN"
             ]
           },
@@ -501,7 +506,7 @@ BRAIN = function (game) {
             "emotion": "I'm HUNGRY",
             "goal":776,
             "acts":[
-              "bank",
+              "bakery",
               "RETURN"
             ]
           }
@@ -614,7 +619,7 @@ BRAIN = function (game) {
             "emotion": "I'm un-CREATIVE",
             "goal":1500,
             "acts":[
-              "bank",
+              "bookstore",
               "RETURN"
             ]
           },
@@ -650,7 +655,7 @@ BRAIN.prototype.life = function () {
   //console.log(this.hunger);
 
 
-console.log("AI Life");
+
 
   for ( var i = 0; i < this.thoughts.needs.length; i++)
   {
@@ -705,7 +710,7 @@ BRAIN.prototype.getRandomRange= function (low, high) {
 BRAIN.prototype.setGoal = function () {
 
   this.sortThoughts();
-  return this.game.doors[this.thoughts.needs[0].maslow[0].acts[0].toLowerCase()].x;
+  return this.game.doors[this.thoughts.needs[0].maslow[0].acts[0].toLowerCase()].centerX;
   //return this.thoughts.needs[0].maslow[0].goal;
 
 
@@ -807,6 +812,9 @@ CITY = function (game,  x, y) {
   this.addOrderedBuildings();
   this.addBank();
   this.addLibrary();
+  this.addBakery();
+  this.addCafe();
+  this.addBookstore();
 
   //console.log(this.buildings);
   this.addBuildingsToGame();
@@ -907,7 +915,18 @@ CITY.prototype.addBuildingsToGame = function () {
 CITY.prototype.addLibrary = function() {
   this.buildings.create(0, this.game.world.height - 440, "library", 0,false);
 };
+CITY.prototype.addBakery = function(){
+  this.buildings.create(0, this.game.world.height - 495, "bakery", 0,false);
 
+};
+CITY.prototype.addCafe = function(){
+  this.buildings.create(0, this.game.world.height - 495, "cafe", 0,false);
+
+};
+CITY.prototype.addBookstore = function(){
+  this.buildings.create(0, this.game.world.height - 495, "bookstore", 0,false);
+
+};
 
 CITY.prototype.addBank = function() {
   this.buildings.create(0, this.game.world.height - 488, "bank", 0,false);
@@ -1652,7 +1671,8 @@ Pedestrian.prototype.spriteMessage = function () {
   }
   if(this.visible){
     var message = "";
-    if(this.animations.currentAnim.name.indexOf("-wait") === -1){
+    console.log(this.isMoving);
+    if(this.isMoving){
       message = this.ai.thoughts.needs[0].maslow[0].emotion;
     }else{
       message = "Thinking...";
@@ -1663,35 +1683,17 @@ Pedestrian.prototype.spriteMessage = function () {
   }
 
 
-
-
-
-
-
 };
 Pedestrian.prototype.removePedestrian = function (next, sprite) {
-
-
-
   sprite.visible = false;
   sprite.ai.thoughts.needs[0].maslow[0].value = 0;
   var timer = sprite.game.time.events.add(Phaser.Timer.SECOND*4, next, sprite);
 
-
-
-
 };
 
-
-
-
-
-
 Pedestrian.prototype.putBack = function () {
-  this.direction = this.setDirection();
   this.visible = true;
   this.goal = this.ai.setGoal();
-
 
 };
 
@@ -1719,6 +1721,14 @@ console.log("set direction");
 
 
 };
+
+
+
+
+
+
+
+
 Pedestrian.prototype.randomChoice=function(choices){
   console.log("random choice");
   var index =  Math.floor(Math.random() * choices.length);
@@ -1726,117 +1736,116 @@ Pedestrian.prototype.randomChoice=function(choices){
 };
 
 
-Pedestrian.prototype.getSpeed = function(speed, vary) {
-  console.log("get speed");
-  var return_speed = speed + this.game.rnd.integerInRange(100, vary);
+
+
+
+
+
+
+Pedestrian.prototype.getNormalizedSpeed = function(return_speed) {
   return (Math.round((Phaser.Math.distance(this.x, this.y, this.goal, this.y) / return_speed) * 1000000));
 };
-Pedestrian.prototype.brain = function() {
-console.log("brain");
-
-  switch (this.anim) {
-    case "delivery-walk":
-      this.speed = this.getSpeed(15000, 5000);
-      this.isMoving = true;
-      break;
-    case "delivery-wait":
-      this.speed = 0;
-      this.isMoving = false;
-      break;
-    case "businessman-walk":
-      this.speed = this.getSpeed(20000, 2000);
-      this.isMoving = true;
-      break;
-    case "businessman-wait":
-      this.speed = 0;
-      this.isMoving = false;
-      break;
-    case "oldman-walk":
-      this.speed = this.getSpeed(40000, 5000);
-      this.isMoving = true;
-      break;
-    case "oldman-wait":
-      this.speed = 0;
-      this.isMoving = false;
-      break;
-    case "boy-walk":
-      this.speed = this.getSpeed(15000, 5000);
-      this.isMoving = true;
-      break;
-    case "boy-wait":
-      this.speed = 0;
-      this.isMoving = false;
-      break;
-    case "slick-walk":
-      this.speed = this.getSpeed(50000, 5000);
-      this.isMoving = true;
-      break;
-    case "slick-wait":
-      this.speed = 0;
-      this.isMoving = false;
-      break;
-    case "hapgood-walk":
-      this.speed = this.getSpeed(70000, 5000);
-      this.isMoving = true;
-      break;
-    case "hapgood-wait":
-      this.speed = 0;
-      this.isMoving = false;
-      break;
-    case "foreign-walk":
-      this.speed = this.getSpeed(20000, 5000);
-      this.isMoving = true;
-      break;
-    case "foreign-wait":
-      this.speed = 0;
-      this.isMoving = false;
-      break;
-  }
-
-  console.log("set animation: " + this.anim + " and ismoving=" + this.isMoving);
+Pedestrian.prototype.getSpeed = function(speed, vary) {
+  console.log("get speed");
+  return this.getNormalizedSpeed(speed) + this.game.rnd.integerInRange(100, vary);
 
 };
+
+
+
+
+
+
+
+Pedestrian.prototype.brain = function() {
+
+  if(this.isWalking() === true) {
+    this.speed = this.getNormalizedSpeed(50000);
+  }
+  if(this.isWaiting() === true) {
+    this.speed = 0;
+  }
+
+  console.log("set animation: " + this.anim);
+
+};
+
+
+
+
+
+Pedestrian.prototype.isWaiting = function() {
+  return this.anim.indexOf("-wait") !== -1;
+};
+
+
+
+
+
+Pedestrian.prototype.isWalking = function() {
+  return this.anim.indexOf("-walk") !== -1;
+};
+
+
+
+
+
+
+
 Pedestrian.prototype.check_animation = function() {
+  console.log("check animation", this.anim.indexOf("-walk"));
   this.move_tween = this.game.add.tween(this);
   var delay = this.game.rnd.integerInRange(1000, 6000);
   this.brain();
 
 
 
-  if(this.isMoving){
+  if(this.isWalking() === true){
+
     this.move_tween.to({ x: this.goal}, this.speed).delay(delay);
     this.move_tween.start();
     this.move_tween.onStart.add(function(){
-        this.isMoving = this.anim.indexOf("-walk") === true;
+        this.isMoving = true;
         this.movement();},
       this);
 
     this.move_tween.onComplete.add(function(){
         this.anim = this.anim.replace("-walk", "-wait");
+        this.isMoving = false;
         this.movement();
 
       },
       this);
+  }else{
+    this.move_tween.stop();
+    this.isMoving = false;
   }
-
-
-
-
 
 
 };
 
 
+
+
+
+
+
 Pedestrian.prototype.doWait = function () {
 
     console.log("currently not waiting, starting wait animation");
-    this.isMoving = false;
     this.anim = this.anim.replace("-walk", "-wait");
 
     this.check_animation();
     this.removePedestrian(this.putBack, this);
 
 };
+
+
+
+
+
+
+
 Pedestrian.prototype.movement = function () {
 
 console.log("movement");
@@ -1848,56 +1857,38 @@ console.log("movement");
 
 
 
+
+
+
 Pedestrian.prototype.goalAchieved = function () {
   return this.x === this.goal;
 };
+
+
+
+
+
+
+
 Pedestrian.prototype.update = function () {
-console.log(this.isMoving);
+
   this.spriteMessage();
   this.ai.life();
   if(this.goalAchieved()){
     console.log("arrived at goal");
     this.doWait();
   }else{
-    if(this.animations.currentAnim.name.indexOf("-walk") === -1 && this.isMoving !== true){
+    if(this.isWaiting() === true){
+      console.log("not walking");
       this.goal = this.ai.setGoal();
       this.anim = this.anim.replace("-wait", "-walk");
-      this.isMoving = true;
+
       this.check_animation();
     }
+
   }
 
-// move to goal
-  // check if goal is achieved
-  // if yes, set new goal
-  // start moving
-  //
 
-  //if(this.visible) {
-  //
-  //  console.log("is walking:", this.animations.currentAnim.name.indexOf("-walk"));
-  //  if(this.animations.currentAnim.name.indexOf("-walk") === -1 && this.isMoving !== true){
-  //    console.log("setting goal and starting walk");
-  //
-  //    this.anim = this.anim.replace("-wait", "-walk");
-  //
-  //    this.goal = this.ai.setGoal();
-  //    this.direction = this.setDirection();
-  //    this.check_animation();
-  //    //console.log(this.anim, "CHANGED GOAL");
-  //
-  //  }
-  //}else{
-  //  this.ai.thoughts.needs[0].maslow[0].value -= 0.01;
-  //  if(this.ai.thoughts.needs[0].maslow[0].value <= 0){
-  //    console.log("REST COMPLETED");
-  //    this.ai.thoughts.needs[0].maslow[0].value = 0;
-  //    this.visible = true;
-  //    this.goal = this.ai.setGoal();
-  //    this.anim = this.anim.replace("-wait", "-walk");
-  //    //console.log(this.thoughts);
-  //  }
-  //}
 
 
 };

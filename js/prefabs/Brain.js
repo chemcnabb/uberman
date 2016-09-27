@@ -13,7 +13,7 @@ BRAIN = function (game) {
             "emotion": "I'm THIRSTY",
             "goal":677,
             "acts":[
-              "library",
+              "cafe",
               "RETURN"
             ]
           },
@@ -25,7 +25,7 @@ BRAIN = function (game) {
             "emotion": "I'm HUNGRY",
             "goal":776,
             "acts":[
-              "bank",
+              "bakery",
               "RETURN"
             ]
           }
@@ -138,7 +138,7 @@ BRAIN = function (game) {
             "emotion": "I'm un-CREATIVE",
             "goal":1500,
             "acts":[
-              "bank",
+              "bookstore",
               "RETURN"
             ]
           },
@@ -174,7 +174,7 @@ BRAIN.prototype.life = function () {
   //console.log(this.hunger);
 
 
-console.log("AI Life");
+
 
   for ( var i = 0; i < this.thoughts.needs.length; i++)
   {
@@ -229,7 +229,7 @@ BRAIN.prototype.getRandomRange= function (low, high) {
 BRAIN.prototype.setGoal = function () {
 
   this.sortThoughts();
-  return this.game.doors[this.thoughts.needs[0].maslow[0].acts[0].toLowerCase()].x;
+  return this.game.doors[this.thoughts.needs[0].maslow[0].acts[0].toLowerCase()].centerX;
   //return this.thoughts.needs[0].maslow[0].goal;
 
 

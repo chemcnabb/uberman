@@ -19,7 +19,7 @@ Uberman.Game.prototype = {
 
     this.cars_sprites_array = ['car', 'car2'];
     this.numcars = 10;
-    this.numpredestrians = 25;
+    this.numpredestrians = 10;
     this.game.dayLength = 60000 * 5;
     this.game.development = true;
   },

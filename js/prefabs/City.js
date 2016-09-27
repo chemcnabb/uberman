@@ -27,6 +27,9 @@ CITY = function (game,  x, y) {
   this.addOrderedBuildings();
   this.addBank();
   this.addLibrary();
+  this.addBakery();
+  this.addCafe();
+  this.addBookstore();
 
   //console.log(this.buildings);
   this.addBuildingsToGame();
@@ -127,7 +130,18 @@ CITY.prototype.addBuildingsToGame = function () {
 CITY.prototype.addLibrary = function() {
   this.buildings.create(0, this.game.world.height - 440, "library", 0,false);
 };
+CITY.prototype.addBakery = function(){
+  this.buildings.create(0, this.game.world.height - 495, "bakery", 0,false);
 
+};
+CITY.prototype.addCafe = function(){
+  this.buildings.create(0, this.game.world.height - 495, "cafe", 0,false);
+
+};
+CITY.prototype.addBookstore = function(){
+  this.buildings.create(0, this.game.world.height - 495, "bookstore", 0,false);
+
+};
 
 CITY.prototype.addBank = function() {
   this.buildings.create(0, this.game.world.height - 488, "bank", 0,false);

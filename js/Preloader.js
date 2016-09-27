@@ -42,8 +42,13 @@ Uberman.Preloader.prototype = {
     this.game.load.image('bank', 'images/buildings/bank.gif', 288, 279);
     this.game.load.image('library', 'images/buildings/Library.gif', 596, 231);
 
-    this.game.load.spritesheet('foodshops', 'images/buildings/foodshops.gif', 375, 376, 12);
 
+
+
+
+    this.game.load.image('bakery', 'images/buildings/bakery.gif');
+    this.game.load.image('cafe', 'images/buildings/cafe.gif');
+    this.game.load.image('bookstore', 'images/buildings/bookstore.gif');
 
 
     this.game.load.image('cape_streak', 'images/cape_streak.png');
