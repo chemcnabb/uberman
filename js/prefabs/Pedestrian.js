@@ -62,7 +62,7 @@ Pedestrian.prototype.spriteMessage = function () {
   }
   if(this.visible){
     var message = "";
-    console.log(this.isMoving);
+    // console.log(this.isMoving);
     if(this.isMoving){
       message = this.ai.thoughts.needs[0].maslow[0].emotion;
     }else{
@@ -101,7 +101,7 @@ Pedestrian.prototype.onSpriteHover = function (sprite, pointer) {
 
 
 Pedestrian.prototype.setDirection = function () {
-console.log("set direction");
+// console.log("set direction");
   if(this.goal < this.x){
     this.scale.x = -1;
     return "LEFT";
@@ -121,7 +121,7 @@ console.log("set direction");
 
 
 Pedestrian.prototype.randomChoice=function(choices){
-  console.log("random choice");
+  // console.log("random choice");
   var index =  Math.floor(Math.random() * choices.length);
   return choices[index];
 };
@@ -137,7 +137,7 @@ Pedestrian.prototype.getNormalizedSpeed = function(return_speed) {
   return (Math.round((Phaser.Math.distance(this.x, this.y, this.goal, this.y) / return_speed) * 1000000));
 };
 Pedestrian.prototype.getSpeed = function(speed, vary) {
-  console.log("get speed");
+  // console.log("get speed");
   return this.getNormalizedSpeed(speed) + this.game.rnd.integerInRange(100, vary);
 
 };
@@ -157,7 +157,7 @@ Pedestrian.prototype.brain = function() {
     this.speed = 0;
   }
 
-  console.log("set animation: " + this.anim);
+  // console.log("set animation: " + this.anim);
 
 };
 
@@ -184,7 +184,7 @@ Pedestrian.prototype.isWalking = function() {
 
 
 Pedestrian.prototype.check_animation = function() {
-  console.log("check animation", this.anim.indexOf("-walk"));
+  // console.log("check animation", this.anim.indexOf("-walk"));
   this.move_tween = this.game.add.tween(this);
   var delay = this.game.rnd.integerInRange(1000, 6000);
   this.brain();
@@ -223,7 +223,7 @@ Pedestrian.prototype.check_animation = function() {
 
 Pedestrian.prototype.doWait = function () {
 
-    console.log("currently not waiting, starting wait animation");
+    // console.log("currently not waiting, starting wait animation");
     this.anim = this.anim.replace("-walk", "-wait");
 
     this.check_animation();
@@ -239,7 +239,7 @@ Pedestrian.prototype.doWait = function () {
 
 Pedestrian.prototype.movement = function () {
 
-console.log("movement");
+// console.log("movement");
   this.direction = this.setDirection();
   this.animations.play(this.anim);
   this.loaded = true;
@@ -266,11 +266,11 @@ Pedestrian.prototype.update = function () {
   this.spriteMessage();
   this.ai.life();
   if(this.goalAchieved()){
-    console.log("arrived at goal");
+    // console.log("arrived at goal");
     this.doWait();
   }else{
     if(this.isWaiting() === true){
-      console.log("not walking");
+      // console.log("not walking");
       this.goal = this.ai.setGoal();
       this.anim = this.anim.replace("-wait", "-walk");
 
