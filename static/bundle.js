@@ -1245,7 +1245,7 @@ Hero.prototype.checkOverlap = function (spriteA, spriteList) {
 
     for (var i = 0; i < Object.keys(spriteList).length; i++) {
         var boundsB = spriteList[Object.keys(spriteList)[i]].getBounds();
-        
+
         if (Phaser.Rectangle.intersects(boundsA, boundsB)) {
             this.game.door = spriteList[Object.keys(spriteList)[i]];
             return true;
