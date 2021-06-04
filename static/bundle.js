@@ -403,7 +403,7 @@ Uberman.Preloader.prototype = {
     this.game.load.image('cape_streak', 'images/cape_streak.png');
     this.game.load.image('sun', 'images/sun.png');
     this.game.load.image('moon', 'images/moon.png');
-    this.game.load.spritesheet('hero', 'images/uber_sprite.gif', 55, 110, 28);
+    this.game.load.spritesheet('hero', 'images/sprites/uber_sprite.png', 65, 111, 28);
     this.game.load.spritesheet('pedestrian', 'images/pedestrians.gif', 55, 110, 67);
     this.game.load.image('car', 'images/car.gif', 300, 95);
     this.game.load.image('car2', 'images/car2.gif', 270, 81);
@@ -1105,6 +1105,7 @@ Hero = function (game, x, y, frame) {
 
     this.followedObject = this.body;
 
+
     this.game.physics.arcade.enable(this);
     this.directions = ["LEFT", "UP_LEFT", "UP", "UP_RIGHT", "RIGHT", "DOWN_RIGHT", "DOWN", "DOWN_LEFT"];
     this.alter_walk = this.animations.add("alter_up", [5], 6, false);
@@ -1245,7 +1246,7 @@ Hero.prototype.checkOverlap = function (spriteA, spriteList) {
 
     for (var i = 0; i < Object.keys(spriteList).length; i++) {
         var boundsB = spriteList[Object.keys(spriteList)[i]].getBounds();
-        
+
         if (Phaser.Rectangle.intersects(boundsA, boundsB)) {
             this.game.door = spriteList[Object.keys(spriteList)[i]];
             return true;

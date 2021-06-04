@@ -19,6 +19,7 @@ Hero = function (game, x, y, frame) {
 
     this.followedObject = this.body;
 
+
     this.game.physics.arcade.enable(this);
     this.directions = ["LEFT", "UP_LEFT", "UP", "UP_RIGHT", "RIGHT", "DOWN_RIGHT", "DOWN", "DOWN_LEFT"];
     this.alter_walk = this.animations.add("alter_up", [5], 6, false);
