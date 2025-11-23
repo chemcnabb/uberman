@@ -61,11 +61,13 @@ Pedestrian.prototype.constructor = Pedestrian;
 
 
 Pedestrian.prototype.spriteMessage = function () {
-  if (this.messageContainer) {
-    this.messageContainer.destroy();
-  }
-
   if (!this.visible) {
+    if (this.messageContainer) {
+      this.messageContainer.destroy();
+      this.messageContainer = null;
+      this.messageText = null;
+      this.messageBubble = null;
+    }
     return;
   }
 
@@ -81,41 +83,48 @@ Pedestrian.prototype.spriteMessage = function () {
   var intentText = this.currentIntent && this.currentIntent.type ? " [" + this.currentIntent.type + "]" : "";
   var fullText = message + intentText + walletText + fatigueText;
 
-  var container = this.game.add.group();
   var bubbleMaxWidth = 240;
   var padding = 12;
 
-  var text = this.game.add.bitmapText(0, 0, 'smallfont', fullText, 18);
-  text.maxWidth = bubbleMaxWidth;
-  text.align = 'center';
+  if (!this.messageContainer) {
+    this.messageContainer = this.game.add.group();
+    this.messageBubble = this.game.add.graphics(0, 0);
+    this.messageText = this.game.add.bitmapText(0, 0, 'smallfont', fullText, 18);
+    this.messageText.maxWidth = bubbleMaxWidth;
+    this.messageText.align = 'center';
 
-  var bubbleWidth = text.width + padding * 2;
-  var bubbleHeight = text.height + padding * 2;
+    this.messageContainer.add(this.messageBubble);
+    this.messageContainer.add(this.messageText);
+  }
 
-  var bubble = this.game.add.graphics(0, 0);
-  bubble.beginFill(0xffffff, 0.92);
-  bubble.lineStyle(2, 0x000000, 0.8);
-  bubble.drawRoundedRect(-bubbleWidth / 2, -bubbleHeight - padding, bubbleWidth, bubbleHeight, 10);
-  bubble.endFill();
+  if (this.lastMessage !== fullText) {
+    this.messageText.text = fullText;
 
-  // Small tail for a comic-style bubble
-  bubble.beginFill(0xffffff, 0.92);
-  bubble.lineStyle(2, 0x000000, 0.8);
-  bubble.moveTo(-10, -padding);
-  bubble.lineTo(0, 0);
-  bubble.lineTo(10, -padding);
-  bubble.endFill();
+    var bubbleWidth = this.messageText.width + padding * 2;
+    var bubbleHeight = this.messageText.height + padding * 2;
 
-  text.x = -text.width / 2;
-  text.y = -bubbleHeight - padding + padding;
+    this.messageBubble.clear();
+    this.messageBubble.beginFill(0xffffff, 0.92);
+    this.messageBubble.lineStyle(2, 0x000000, 0.8);
+    this.messageBubble.drawRoundedRect(-bubbleWidth / 2, -bubbleHeight - padding, bubbleWidth, bubbleHeight, 10);
+    this.messageBubble.endFill();
 
-  container.add(bubble);
-  container.add(text);
+    // Small tail for a comic-style bubble
+    this.messageBubble.beginFill(0xffffff, 0.92);
+    this.messageBubble.lineStyle(2, 0x000000, 0.8);
+    this.messageBubble.moveTo(-10, -padding);
+    this.messageBubble.lineTo(0, 0);
+    this.messageBubble.lineTo(10, -padding);
+    this.messageBubble.endFill();
 
-  container.x = this.centerX;
-  container.y = this.y - this.height / 2;
+    this.messageText.x = -this.messageText.width / 2;
+    this.messageText.y = -bubbleHeight - padding + padding;
 
-  this.messageContainer = container;
+    this.lastMessage = fullText;
+  }
+
+  this.messageContainer.x = this.centerX;
+  this.messageContainer.y = this.y - this.height / 2;
 };
 Pedestrian.prototype.removePedestrian = function (next, sprite) {
   sprite.visible = false;
