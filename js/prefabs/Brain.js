@@ -12,6 +12,13 @@ BRAIN = function (game) {
             "value": this.getRandomRange(0, 100),
             "baseWeight": 2.4,
             "emotion": "Mouth is dry—need a drink before I keel over",
+            "emotionLines": [
+              "Mouth is dry—need a drink before I keel over",
+              "Throat feels like sandpaper; I need something cold",
+              "Every step kicks up more dust inside me—water, now",
+              "I can taste the air—give me a cup to quiet this cough",
+              "Craving something crisp to rinse the day out"
+            ],
             "goal":677,
             "acts":[
               "cafe",
@@ -24,6 +31,13 @@ BRAIN = function (game) {
             "value": this.getRandomRange(0, 100),
             "baseWeight": 2.1,
             "emotion": "Stomach is growling for something warm",
+            "emotionLines": [
+              "Stomach is growling for something warm",
+              "Need a solid bite before I tip over",
+              "Fantasizing about anything hearty and fresh",
+              "Energy is fading—time to refuel with real food",
+              "Craving a quick sit-down and a hot plate"
+            ],
             "goal":776,
             "acts":[
               "bakery",
@@ -40,6 +54,13 @@ BRAIN = function (game) {
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.09,
             "emotion": "Need a safe corner where I can breathe",
+            "emotionLines": [
+              "Need a safe corner where I can breathe",
+              "Stomach knots up—I want somewhere steady",
+              "Too exposed out here, I need a calm nook",
+              "Heart is racing; I should tuck into someplace safe",
+              "Looking for walls that feel like they have my back"
+            ],
             "goal":1700,
             "acts":[
               "library",
@@ -52,6 +73,13 @@ BRAIN = function (game) {
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.08,
             "emotion": "Wallet feels too light—time to earn",
+            "emotionLines": [
+              "Wallet feels too light—time to earn",
+              "Funds are thin; better clock in and rebuild",
+              "Bank account is sighing—need to stack some bills",
+              "Too close to empty for comfort; payday mindset engaged",
+              "I can almost hear my savings goal calling me back"
+            ],
             "goal":2300,
             "acts":[
               "BANK",
@@ -64,6 +92,13 @@ BRAIN = function (game) {
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.07,
             "emotion": "Freezing up here, must find a warm spot",
+            "emotionLines": [
+              "Freezing up here, must find a warm spot",
+              "Fingers are numb—need a heater and a mug",
+              "This chill is sinking in; any cozy corner will do",
+              "Shoulders are stiff; need someplace with steam or sun",
+              "Dreaming of blankets and a hot drink"
+            ],
             "goal":250,
             "acts":[
               "library",
@@ -81,6 +116,13 @@ BRAIN = function (game) {
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.06,
             "emotion": "Craving some company, not just crowds",
+            "emotionLines": [
+              "Craving some company, not just crowds",
+              "Need real chatter, not just passing faces",
+              "Hoping to bump into someone warm and familiar",
+              "Would love to hear a friendly voice right now",
+              "Longing for a laugh with someone nearby"
+            ],
             "goal":90,
             "acts":[
               "bank",
@@ -93,6 +135,13 @@ BRAIN = function (game) {
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.05,
             "emotion": "Wish I had someone to share the walk with",
+            "emotionLines": [
+              "Wish I had someone to share the walk with",
+              "Looking for a spark, not just a hello",
+              "Want to lean on someone who leans back",
+              "Missing closeness; even a quick moment would do",
+              "My heart is wandering; maybe I can meet someone"
+            ],
             "goal":1200,
             "acts":[
               "library",
@@ -105,6 +154,13 @@ BRAIN = function (game) {
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.04,
             "emotion": "Missing the comfort of my people",
+            "emotionLines": [
+              "Missing the comfort of my people",
+              "Need familiar voices to steady me",
+              "Hoping to feel rooted with someone who knows me",
+              "Craving a reminder that I belong somewhere",
+              "Would love to check in with the folks who get me"
+            ],
             "goal":900,
             "acts":[
               "bank",
@@ -121,6 +177,13 @@ BRAIN = function (game) {
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.03,
             "emotion": "Confidence is thin—I need a win",
+            "emotionLines": [
+              "Confidence is thin—I need a win",
+              "Need a small victory to steady my stride",
+              "Looking for proof I can handle today",
+              "Feeling small; want to stand taller again",
+              "A quick success would switch my mood around"
+            ],
             "goal":200,
             "acts":[
               "library",
@@ -137,6 +200,13 @@ BRAIN = function (game) {
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.02,
             "emotion": "I feel dull—need art to spark me",
+            "emotionLines": [
+              "I feel dull—need art to spark me",
+              "My mind is gray; I want color and music",
+              "Need a gallery of ideas to recharge",
+              "Craving stories, paint, anything bright",
+              "Would love to browse something beautiful"
+            ],
             "goal":1500,
             "acts":[
               "bookstore",
@@ -149,6 +219,13 @@ BRAIN = function (game) {
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.01,
             "emotion": "Brain fog. I should learn something new",
+            "emotionLines": [
+              "Brain fog. I should learn something new",
+              "Mind feels slow—time for a fresh idea",
+              "Need to stretch my head with something challenging",
+              "Hungry for a fact or two to brighten my thinking",
+              "Could use a good read to sharpen my focus"
+            ],
             "goal":2000,
             "acts":[
               "LIBRARY",
@@ -167,9 +244,40 @@ BRAIN = function (game) {
 BRAIN.prototype = Object.create(Phaser.Sprite.prototype);
 BRAIN.prototype.constructor = BRAIN;
 
+BRAIN.prototype.createPersonality = function () {
+  var archetypes = [
+    {
+      id: 'earnest',
+      openers: ["Honestly,", "Note to self:", "For real,"],
+      closers: ["gotta take this seriously.", "no excuses this time.", "focus up."],
+      tempo: 'steady'
+    },
+    {
+      id: 'chatty',
+      openers: ["You know what?", "Oh!", "Fun fact:"],
+      closers: ["let's make a moment of it.", "maybe I’ll talk someone’s ear off.", "I could share this with someone."],
+      tempo: 'quick'
+    },
+    {
+      id: 'dreamer',
+      openers: ["Drifting along,", "Huh,", "Imagine this:"],
+      closers: ["maybe I’ll find inspiration.", "let’s follow the vibe.", "could be a story in this."],
+      tempo: 'calm'
+    },
+    {
+      id: 'pragmatic',
+      openers: ["Practical move:", "Plan:", "Next step:"],
+      closers: ["keep it efficient.", "in and out.", "stick to the plan."],
+      tempo: 'brisk'
+    }
+  ];
+  return archetypes[this.getRandomRange(0, archetypes.length - 1)];
+};
+
 BRAIN.prototype.generateProfile = function () {
   var workplaces = ['bank', 'library', 'cafe', 'bakery', 'bookstore'];
   var shiftStart = this.getRandomRange(7, 10);
+  var personality = this.createPersonality();
   return {
     homeX: this.getRandomRange(100, this.game.world.width - 100),
     workplace: workplaces[this.getRandomRange(0, workplaces.length - 1)],
@@ -180,7 +288,8 @@ BRAIN.prototype.generateProfile = function () {
     lastIntent: null,
     fatigue: this.getRandomRange(10, 40),
     savingsGoal: this.getRandomRange(25, 60),
-    favoriteNeed: this.thoughts.needs[this.getRandomRange(0, this.thoughts.needs.length - 1)].maslow[0].need
+    favoriteNeed: this.thoughts.needs[this.getRandomRange(0, this.thoughts.needs.length - 1)].maslow[0].need,
+    personality: personality
   };
 };
 
@@ -238,32 +347,83 @@ BRAIN.prototype.buildIntent = function (type, doorKey, fallbackX, emotion, needN
   };
 };
 
+BRAIN.prototype.pickLine = function (lines) {
+  if (!lines || lines.length === 0) {
+    return '';
+  }
+  var index = this.getRandomRange(0, lines.length - 1);
+  return lines[index];
+};
+
+BRAIN.prototype.composeNeedThought = function (needName, fallbackEmotion) {
+  var need = this.findNeedByName(needName);
+  var baseLines = need && need.emotionLines ? need.emotionLines : [];
+  if (baseLines.length === 0 && need && need.emotion) {
+    baseLines.push(need.emotion);
+  }
+  if (baseLines.length === 0 && fallbackEmotion) {
+    baseLines.push(fallbackEmotion);
+  }
+
+  var line = this.pickLine(baseLines);
+  var personality = this.profile.personality || { openers: [], closers: [] };
+  var opener = this.pickLine(personality.openers);
+  var closer = this.pickLine(personality.closers);
+  var budgetHint = '';
+  if (!this.hasBudgetFor(needName) && needName !== 'MONEY') {
+    budgetHint = ' (but I have to keep it cheap)';
+  }
+  var fatigueHint = this.profile.fatigue > 70 ? ' Moving slower than usual.' : '';
+  var sentence = '';
+  if (opener) {
+    sentence += opener + ' ';
+  }
+  sentence += line;
+  if (budgetHint) {
+    sentence += budgetHint;
+  }
+  if (closer) {
+    sentence += ' ' + closer;
+  }
+  if (fatigueHint) {
+    sentence += fatigueHint;
+  }
+  return sentence;
+};
+
+BRAIN.prototype.composeWorkThought = function () {
+  var personality = this.profile.personality || { openers: [], closers: [] };
+  var openers = ['Off to my ' + this.profile.workplace + ' shift to refill the wallet', 'Clocking in at the ' + this.profile.workplace + ', chasing those bills', 'Heading to the ' + this.profile.workplace + ' before the day gets away'];
+  var closer = this.pickLine(personality.closers);
+  var line = this.pickLine(openers);
+  if (closer) {
+    line += ' ' + closer;
+  }
+  return line;
+};
+
+BRAIN.prototype.composeRestThought = function () {
+  var fatigue = this.profile.fatigue;
+  var personality = this.profile.personality || { openers: [], closers: [] };
+  var restReasons = fatigue > 90 ? ['Eyes sting—home is the only answer', 'Too worn out; need to collapse for a bit', 'Every step feels heavy; home, now'] : ['Better recharge before the next shift', 'A quick breather will help me focus', 'Should rest up so I don’t drag tomorrow'];
+  var opener = this.pickLine(personality.openers);
+  var closer = this.pickLine(personality.closers);
+  var line = this.pickLine(restReasons);
+  var text = opener ? opener + ' ' + line : line;
+  return closer ? text + ' ' + closer : text;
+};
+
 BRAIN.prototype.describeIntent = function (type, data) {
-  var walletText = ' ($' + this.profile.wallet + ')';
-  var fatigueText = ' (fatigue ' + Math.round(this.profile.fatigue) + '%)';
   if (type === 'WORK') {
-    return 'Off to my ' + this.profile.workplace + ' shift to refill the wallet' + walletText;
+    return this.composeWorkThought();
   }
   if (type === 'REST') {
-    var restReason = this.profile.fatigue > 80 ? 'can barely keep eyes open' : 'better rest before the next shift';
-    return 'Heading home, ' + restReason + fatigueText;
+    return this.composeRestThought();
   }
   if (type === 'FULFILL_NEED' && data && data.need) {
+    var thought = this.composeNeedThought(data.need, data.emotion);
     var cost = this.getNeedCost(data.need);
-    var thoughts = {
-      WATER: 'Need a cool drink before my throat cracks',
-      FOOD: 'Hunting for something hearty to quiet this stomach',
-      ART: 'Craving color and music to wake my senses',
-      EDUCATION: 'Time to feed my brain with something new',
-      CONFIDENCE: 'Need a quick win to feel like myself again',
-      WARMTH: 'Chasing a cozy corner to thaw out',
-      FRIENDSHIP: 'Looking for friendly faces and small talk',
-      INTIMACY: 'Hoping to connect with someone who gets me',
-      FAMILY: 'Want to feel grounded around familiar voices',
-      MONEY: 'I should get some cash together'
-    };
-    var needThought = thoughts[data.need] || data.emotion || 'I know what I want right now';
-    return needThought + ' ($' + cost + ')';
+    return cost ? thought + ' ($' + cost + ')' : thought;
   }
   return data && data.emotion ? data.emotion : 'On the move';
 };
