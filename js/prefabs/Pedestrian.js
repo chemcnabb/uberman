@@ -40,6 +40,10 @@ Pedestrian = function (game, y, sprite) {
 
 
   this.anim = this.randomChoice(this.pedestrian_array);
+  this.isDistracted = false;
+  this.distractionMessages = ["Ooh!", "Ahh!", "It's UBERMAN!"];
+  this.distractionRadius = 260;
+  this.distractionLine = null;
 
   this.check_animation();
   this.movement();
@@ -72,7 +76,12 @@ Pedestrian.prototype.spriteMessage = function () {
   }
 
   var message = "";
-  if (this.isMoving) {
+  if (this.isDistracted) {
+    if (!this.distractionLine) {
+      this.distractionLine = this.randomChoice(this.distractionMessages);
+    }
+    message = this.distractionLine;
+  } else if (this.isMoving) {
     message = this.currentIntent && this.currentIntent.message ? this.currentIntent.message : this.ai.thoughts.needs[0].maslow[0].emotion;
   } else {
     message = "Thinking...";
@@ -125,6 +134,46 @@ Pedestrian.prototype.spriteMessage = function () {
 
   this.messageContainer.x = this.centerX;
   this.messageContainer.y = this.y - this.height / 2;
+};
+Pedestrian.prototype.enterDistraction = function () {
+  this.isDistracted = true;
+  this.distractionLine = null;
+  this.lastMessage = null;
+  if (this.move_tween && this.move_tween.isRunning) {
+    this.move_tween.stop();
+  }
+  if (this.isWalking()) {
+    this.anim = this.anim.replace("-walk", "-wait");
+    this.isMoving = false;
+    this.movement();
+  }
+};
+
+Pedestrian.prototype.exitDistraction = function () {
+  this.isDistracted = false;
+  this.distractionLine = null;
+  this.lastMessage = null;
+  if (this.isWaiting()) {
+    this.anim = this.anim.replace("-wait", "-walk");
+    this.check_animation();
+  }
+};
+
+Pedestrian.prototype.updateDistractionState = function () {
+  var player = this.game && this.game.player;
+  if (!player || !player.body) {
+    return;
+  }
+
+  var distanceToPlayer = Phaser.Math.distance(this.x, this.y, player.x, player.y);
+  var playerIsFlyingUber = player.currentState === "uber" && !player.body.touching.down;
+  var shouldDistract = playerIsFlyingUber && distanceToPlayer <= this.distractionRadius;
+
+  if (shouldDistract && !this.isDistracted) {
+    this.enterDistraction();
+  } else if (!shouldDistract && this.isDistracted) {
+    this.exitDistraction();
+  }
 };
 Pedestrian.prototype.removePedestrian = function (next, sprite) {
   sprite.visible = false;
@@ -315,7 +364,13 @@ Pedestrian.prototype.goalAchieved = function () {
 
 Pedestrian.prototype.update = function () {
 
+  this.updateDistractionState();
   this.spriteMessage();
+
+  if (this.isDistracted) {
+    return;
+  }
+
   this.ai.life();
   if(this.goalAchieved()){
     // console.log("arrived at goal");
