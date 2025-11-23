@@ -13,6 +13,8 @@ Pedestrian = function (game, y, sprite) {
   this.visible = true;
 
   this.ai = new Brain(game);
+  this.currentIntent = this.ai.chooseIntent();
+  this.goal = this.currentIntent.goal;
 
   this.direction = this.setDirection();
   this.sprite_message = "";
@@ -64,12 +66,15 @@ Pedestrian.prototype.spriteMessage = function () {
     var message = "";
     // console.log(this.isMoving);
     if(this.isMoving){
-      message = this.ai.thoughts.needs[0].maslow[0].emotion;
+      message = this.currentIntent && this.currentIntent.message ? this.currentIntent.message : this.ai.thoughts.needs[0].maslow[0].emotion;
     }else{
       message = "Thinking...";
     }
 
-    this.sprite_message = this.game.add.bitmapText(this.centerX, this.y - this.height / 2, 'smallfont', message, 18);
+    var walletText = " ($" + this.ai.profile.wallet + ")";
+    var fatigueText = " F:" + Math.round(this.ai.profile.fatigue);
+    var intentText = this.currentIntent && this.currentIntent.type ? " [" + this.currentIntent.type + "]" : "";
+    this.sprite_message = this.game.add.bitmapText(this.centerX, this.y - this.height / 2, 'smallfont', message + intentText + walletText + fatigueText, 18);
     this.sprite_message.anchor.setTo(0.5,0.5);
   }
 
@@ -77,14 +82,15 @@ Pedestrian.prototype.spriteMessage = function () {
 };
 Pedestrian.prototype.removePedestrian = function (next, sprite) {
   sprite.visible = false;
-  sprite.ai.thoughts.needs[0].maslow[0].value = 0;
+  sprite.ai.resolveIntent(sprite.currentIntent);
   var timer = sprite.game.time.events.add(Phaser.Timer.SECOND*4, next, sprite);
 
 };
 
 Pedestrian.prototype.putBack = function () {
   this.visible = true;
-  this.goal = this.ai.setGoal();
+  this.currentIntent = this.ai.chooseIntent();
+  this.goal = this.currentIntent.goal;
 
 };
 
@@ -271,7 +277,9 @@ Pedestrian.prototype.update = function () {
   }else{
     if(this.isWaiting() === true){
       // console.log("not walking");
-      this.goal = this.ai.setGoal();
+      this.currentIntent = this.ai.chooseIntent();
+      this.goal = this.currentIntent.goal;
+      this.direction = this.setDirection();
       this.anim = this.anim.replace("-wait", "-walk");
 
       this.check_animation();
