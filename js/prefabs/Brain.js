@@ -238,6 +238,8 @@ BRAIN = function (game) {
 
   };
 
+  this.profile = this.generateProfile();
+
 
 };
 
