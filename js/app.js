@@ -6,7 +6,7 @@
  *
  * http://phaser.io/sandbox/jQAfQlUa
  *
- * This source requires Phaser 2.6.1
+ * Updated to Phaser CE 2.19.0
  */
 var Uberman = Uberman || {};
 Boot = require("./Boot");
