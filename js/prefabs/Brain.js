@@ -1,6 +1,7 @@
 
 BRAIN = function (game) {
   this.game = game;
+  this.profile = this.generateProfile();
   this.thoughts = {
     "needs": [
       {
@@ -166,37 +167,93 @@ BRAIN = function (game) {
 BRAIN.prototype = Object.create(Phaser.Sprite.prototype);
 BRAIN.prototype.constructor = BRAIN;
 
+BRAIN.prototype.generateProfile = function () {
+  var workplaces = ['bank', 'library', 'cafe', 'bakery', 'bookstore'];
+  var shiftStart = this.getRandomRange(7, 10);
+  return {
+    homeX: this.getRandomRange(100, this.game.world.width - 100),
+    workplace: workplaces[this.getRandomRange(0, workplaces.length - 1)],
+    shiftStart: shiftStart,
+    shiftEnd: shiftStart + this.getRandomRange(6, 9),
+    income: this.getRandomRange(5, 25),
+    wallet: this.getRandomRange(15, 65),
+    lastIntent: null
+  };
+};
+
+BRAIN.prototype.getCurrentHour = function () {
+  var dayLength = this.game.dayLength || 60000 * 5;
+  var elapsed = this.game.time.now % dayLength;
+  return Math.floor((elapsed / dayLength) * 24);
+};
+
+BRAIN.prototype.isWorkingHour = function (hour) {
+  return hour >= this.profile.shiftStart && hour < this.profile.shiftEnd;
+};
+
+BRAIN.prototype.getNeedCost = function (need) {
+  var costs = {
+    WATER: 3,
+    FOOD: 6,
+    ART: 8,
+    EDUCATION: 8,
+    CONFIDENCE: 4,
+    WARMTH: 2
+  };
+  return costs[need] || 0;
+};
+
+BRAIN.prototype.findNeedByName = function (name) {
+  for (var i = 0; i < this.thoughts.needs.length; i++) {
+    var needs = this.thoughts.needs[i].maslow;
+    for (var k = 0; k < needs.length; k++) {
+      if (needs[k].need === name) {
+        return needs[k];
+      }
+    }
+  }
+  return null;
+};
+
+BRAIN.prototype.buildIntent = function (type, doorKey, fallbackX, emotion, needName) {
+  var goalX = fallbackX;
+  if (doorKey && this.game.doors[doorKey]) {
+    goalX = this.game.doors[doorKey].centerX;
+  }
+  return {
+    type: type,
+    door: doorKey,
+    goal: goalX,
+    message: emotion,
+    need: needName
+  };
+};
+
 BRAIN.prototype.getWeight= function (x,y,i) {
   return ( (y*(i+1)-y*(i))/(x*(i+1)-x*(i)) - (y*(i)-y*(i-1))/(x*(i)-x*(i-1))/(x*(i+1)-x*(i-1)));
 };
 
 BRAIN.prototype.life = function () {
-  //console.log(this.hunger);
-
-
-
-
-  for ( var i = 0; i < this.thoughts.needs.length; i++)
-  {
+  for ( var i = 0; i < this.thoughts.needs.length; i++) {
     var needs = this.thoughts.needs[i];
-
     for(var j = 0; j< needs.maslow.length;j++){
-
-      //TODO: adjust calculation of 0.0032 to reflaect maslow hierarchy
-
       needs.maslow[j].value += 0.01;
       needs.maslow[j].weight = this.getWeight(needs.maslow[j].baseWeight,needs.maslow[j].value,i);
-
-
-
-      //console.log(needs.maslow[j].need, this.thoughts.needs[i].maslow[j].weight);
     }
-
-
   }
-
-  //this.goal = this.thoughts.needs[0].maslow[0].goal;
-
+  if (this.profile.wallet < 10) {
+    var moneyNeed = this.findNeedByName('MONEY');
+    if (moneyNeed) {
+      moneyNeed.value += 0.5;
+      moneyNeed.weight += 0.2;
+    }
+  }
+  if (this.getCurrentHour() > 21 || this.getCurrentHour() < 6) {
+    var warmthNeed = this.findNeedByName('WARMTH');
+    if (warmthNeed) {
+      warmthNeed.weight += 0.05;
+    }
+  }
 };
 
 BRAIN.prototype.sortThoughts = function() {
@@ -226,13 +283,60 @@ BRAIN.prototype.getRandomRange= function (low, high) {
   return this.game.rnd.integerInRange(low, high);
 };
 
-BRAIN.prototype.setGoal = function () {
-
+BRAIN.prototype.chooseIntent = function () {
   this.sortThoughts();
-  return this.game.doors[this.thoughts.needs[0].maslow[0].acts[0].toLowerCase()].centerX;
-  //return this.thoughts.needs[0].maslow[0].goal;
+  var hour = this.getCurrentHour();
+  if (this.isWorkingHour(hour)) {
+    return this.buildIntent('WORK', this.profile.workplace, this.game.world.centerX, 'Heading to work', 'MONEY');
+  }
 
+  if (hour >= 22 || hour < 6) {
+    return this.buildIntent('REST', null, this.profile.homeX, 'Heading home to rest', null);
+  }
 
+  var topNeed = this.thoughts.needs[0].maslow[0];
+  var requiredCost = this.getNeedCost(topNeed.need);
+  if (requiredCost > this.profile.wallet && topNeed.need !== 'MONEY') {
+    return this.buildIntent('WORK', this.profile.workplace, this.game.world.centerX, "I need cash first", 'MONEY');
+  }
+  var doorKey = topNeed.acts[0].toLowerCase();
+  return this.buildIntent('FULFILL_NEED', doorKey, this.game.world.centerX, topNeed.emotion, topNeed.need);
+};
+
+BRAIN.prototype.resolveIntent = function (intent) {
+  if (!intent) {
+    return;
+  }
+  if (intent.type === 'WORK') {
+    this.profile.wallet += this.profile.income;
+    var moneyNeed = this.findNeedByName('MONEY');
+    if (moneyNeed) {
+      moneyNeed.value = 0;
+    }
+  }
+
+  if (intent.type === 'FULFILL_NEED' && intent.need) {
+    var need = this.findNeedByName(intent.need);
+    if (need) {
+      need.value = 0;
+      var cost = this.getNeedCost(intent.need);
+      this.profile.wallet = Math.max(0, this.profile.wallet - cost);
+    }
+  }
+
+  if (intent.type === 'REST') {
+    var securityNeed = this.findNeedByName('SECURITY');
+    if (securityNeed) {
+      securityNeed.value = Math.max(0, securityNeed.value - 10);
+    }
+  }
+  this.profile.lastIntent = intent.type;
+};
+
+BRAIN.prototype.setGoal = function () {
+  var intent = this.chooseIntent();
+  this.profile.lastIntent = intent;
+  return intent.goal;
 };
 
 BRAIN.prototype.preload = function () {
