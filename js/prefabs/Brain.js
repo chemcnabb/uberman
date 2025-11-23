@@ -11,7 +11,7 @@ BRAIN = function (game) {
             "weight": 2.4,
             "value": this.getRandomRange(0, 100),
             "baseWeight": 2.4,
-            "emotion": "I'm THIRSTY",
+            "emotion": "Mouth is dry—need a drink before I keel over",
             "goal":677,
             "acts":[
               "cafe",
@@ -23,7 +23,7 @@ BRAIN = function (game) {
             "weight": 2.1,
             "value": this.getRandomRange(0, 100),
             "baseWeight": 2.1,
-            "emotion": "I'm HUNGRY",
+            "emotion": "Stomach is growling for something warm",
             "goal":776,
             "acts":[
               "bakery",
@@ -39,7 +39,7 @@ BRAIN = function (game) {
             "weight": 1.09,
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.09,
-            "emotion": "I'm SCARED",
+            "emotion": "Need a safe corner where I can breathe",
             "goal":1700,
             "acts":[
               "library",
@@ -51,7 +51,7 @@ BRAIN = function (game) {
             "weight": 1.08,
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.08,
-            "emotion": "I'm BROKE",
+            "emotion": "Wallet feels too light—time to earn",
             "goal":2300,
             "acts":[
               "BANK",
@@ -63,7 +63,7 @@ BRAIN = function (game) {
             "weight": 1.07,
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.07,
-            "emotion": "I'm COLD",
+            "emotion": "Freezing up here, must find a warm spot",
             "goal":250,
             "acts":[
               "library",
@@ -80,7 +80,7 @@ BRAIN = function (game) {
             "weight": 1.06,
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.06,
-            "emotion": "No one LIKES ME",
+            "emotion": "Craving some company, not just crowds",
             "goal":90,
             "acts":[
               "bank",
@@ -92,7 +92,7 @@ BRAIN = function (game) {
             "weight": 1.05,
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.05,
-            "emotion": "I'm LONELY",
+            "emotion": "Wish I had someone to share the walk with",
             "goal":1200,
             "acts":[
               "library",
@@ -104,7 +104,7 @@ BRAIN = function (game) {
             "weight": 1.04,
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.04,
-            "emotion": "I have no SUPPORT",
+            "emotion": "Missing the comfort of my people",
             "goal":900,
             "acts":[
               "bank",
@@ -120,7 +120,7 @@ BRAIN = function (game) {
             "weight": 1.03,
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.03,
-            "emotion": "I'm WEAK",
+            "emotion": "Confidence is thin—I need a win",
             "goal":200,
             "acts":[
               "library",
@@ -136,7 +136,7 @@ BRAIN = function (game) {
             "weight": 1.02,
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.02,
-            "emotion": "I'm un-CREATIVE",
+            "emotion": "I feel dull—need art to spark me",
             "goal":1500,
             "acts":[
               "bookstore",
@@ -148,7 +148,7 @@ BRAIN = function (game) {
             "weight": 1.01,
             "value": this.getRandomRange(0, 100),
             "baseWeight": 1.01,
-            "emotion": "I'm not SMART",
+            "emotion": "Brain fog. I should learn something new",
             "goal":2000,
             "acts":[
               "LIBRARY",
@@ -238,6 +238,36 @@ BRAIN.prototype.buildIntent = function (type, doorKey, fallbackX, emotion, needN
   };
 };
 
+BRAIN.prototype.describeIntent = function (type, data) {
+  var walletText = ' ($' + this.profile.wallet + ')';
+  var fatigueText = ' (fatigue ' + Math.round(this.profile.fatigue) + '%)';
+  if (type === 'WORK') {
+    return 'Off to my ' + this.profile.workplace + ' shift to refill the wallet' + walletText;
+  }
+  if (type === 'REST') {
+    var restReason = this.profile.fatigue > 80 ? 'can barely keep eyes open' : 'better rest before the next shift';
+    return 'Heading home, ' + restReason + fatigueText;
+  }
+  if (type === 'FULFILL_NEED' && data && data.need) {
+    var cost = this.getNeedCost(data.need);
+    var thoughts = {
+      WATER: 'Need a cool drink before my throat cracks',
+      FOOD: 'Hunting for something hearty to quiet this stomach',
+      ART: 'Craving color and music to wake my senses',
+      EDUCATION: 'Time to feed my brain with something new',
+      CONFIDENCE: 'Need a quick win to feel like myself again',
+      WARMTH: 'Chasing a cozy corner to thaw out',
+      FRIENDSHIP: 'Looking for friendly faces and small talk',
+      INTIMACY: 'Hoping to connect with someone who gets me',
+      FAMILY: 'Want to feel grounded around familiar voices',
+      MONEY: 'I should get some cash together'
+    };
+    var needThought = thoughts[data.need] || data.emotion || 'I know what I want right now';
+    return needThought + ' ($' + cost + ')';
+  }
+  return data && data.emotion ? data.emotion : 'On the move';
+};
+
 BRAIN.prototype.getWeight= function (x,y,i) {
   return ( (y*(i+1)-y*(i))/(x*(i+1)-x*(i)) - (y*(i)-y*(i-1))/(x*(i)-x*(i-1))/(x*(i+1)-x*(i-1)));
 };
@@ -325,19 +355,27 @@ BRAIN.prototype.chooseIntent = function () {
   var hour = this.getCurrentHour();
   var approachingShift = hour >= this.profile.shiftStart - 1 && hour < this.profile.shiftEnd;
   if (approachingShift && this.profile.fatigue < 90) {
-    return this.buildIntent('WORK', this.profile.workplace, this.game.world.centerX, 'Heading to work', 'MONEY');
+    var workIntent = this.buildIntent('WORK', this.profile.workplace, this.game.world.centerX, 'Heading to work', 'MONEY');
+    workIntent.message = this.describeIntent('WORK', { need: 'MONEY' });
+    return workIntent;
   }
 
   if (this.profile.fatigue > 80 || hour >= 22 || hour < 6) {
-    return this.buildIntent('REST', null, this.profile.homeX, 'Heading home to rest', null);
+    var restIntent = this.buildIntent('REST', null, this.profile.homeX, 'Heading home to rest', null);
+    restIntent.message = this.describeIntent('REST');
+    return restIntent;
   }
 
   var topNeed = this.pickTopNeed();
   if (!this.hasBudgetFor(topNeed.need) && topNeed.need !== 'MONEY') {
-    return this.buildIntent('WORK', this.profile.workplace, this.game.world.centerX, "I need cash first", 'MONEY');
+    var brokeIntent = this.buildIntent('WORK', this.profile.workplace, this.game.world.centerX, "I need cash first", 'MONEY');
+    brokeIntent.message = this.describeIntent('WORK', { need: 'MONEY' });
+    return brokeIntent;
   }
   var doorKey = topNeed.acts[0].toLowerCase();
-  return this.buildIntent('FULFILL_NEED', doorKey, this.game.world.centerX, topNeed.emotion, topNeed.need);
+  var intent = this.buildIntent('FULFILL_NEED', doorKey, this.game.world.centerX, topNeed.emotion, topNeed.need);
+  intent.message = this.describeIntent('FULFILL_NEED', { need: topNeed.need, emotion: topNeed.emotion });
+  return intent;
 };
 
 BRAIN.prototype.resolveIntent = function (intent) {
