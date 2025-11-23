@@ -280,6 +280,17 @@ BRAIN.prototype.generateProfile = function () {
   var workplaces = ['bank', 'library', 'cafe', 'bakery', 'bookstore'];
   var shiftStart = this.getRandomRange(7, 10);
   var personality = this.createPersonality();
+  var needsPool = (this.thoughts && this.thoughts.needs) ? this.thoughts.needs : [];
+  var favoriteNeed = 'WATER';
+
+  if (needsPool.length) {
+    var poolIndex = this.getRandomRange(0, needsPool.length - 1);
+    var pick = needsPool[poolIndex];
+    if (pick && pick.maslow && pick.maslow.length) {
+      favoriteNeed = pick.maslow[0].need;
+    }
+  }
+
   return {
     homeX: this.getRandomRange(100, this.game.world.width - 100),
     workplace: workplaces[this.getRandomRange(0, workplaces.length - 1)],
@@ -290,7 +301,7 @@ BRAIN.prototype.generateProfile = function () {
     lastIntent: null,
     fatigue: this.getRandomRange(10, 40),
     savingsGoal: this.getRandomRange(25, 60),
-    favoriteNeed: this.thoughts.needs[this.getRandomRange(0, this.thoughts.needs.length - 1)].maslow[0].need,
+    favoriteNeed: favoriteNeed,
     personality: personality
   };
 };
