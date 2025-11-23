@@ -1,6 +1,7 @@
 
 BRAIN = function (game) {
   this.game = game;
+  this.profile = this.generateProfile();
   this.thoughts = {
     "needs": [
       {
