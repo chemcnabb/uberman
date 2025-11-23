@@ -177,7 +177,10 @@ BRAIN.prototype.generateProfile = function () {
     shiftEnd: shiftStart + this.getRandomRange(6, 9),
     income: this.getRandomRange(5, 25),
     wallet: this.getRandomRange(15, 65),
-    lastIntent: null
+    lastIntent: null,
+    fatigue: this.getRandomRange(10, 40),
+    savingsGoal: this.getRandomRange(25, 60),
+    favoriteNeed: this.thoughts.needs[this.getRandomRange(0, this.thoughts.needs.length - 1)].maslow[0].need
   };
 };
 
@@ -201,6 +204,12 @@ BRAIN.prototype.getNeedCost = function (need) {
     WARMTH: 2
   };
   return costs[need] || 0;
+};
+
+BRAIN.prototype.hasBudgetFor = function (needName) {
+  var cost = this.getNeedCost(needName);
+  var reserve = Math.floor(this.profile.savingsGoal * 0.5);
+  return (this.profile.wallet - cost) >= reserve;
 };
 
 BRAIN.prototype.findNeedByName = function (name) {
@@ -241,6 +250,7 @@ BRAIN.prototype.life = function () {
       needs.maslow[j].weight = this.getWeight(needs.maslow[j].baseWeight,needs.maslow[j].value,i);
     }
   }
+  this.profile.fatigue = Math.min(100, this.profile.fatigue + 0.05);
   if (this.profile.wallet < 10) {
     var moneyNeed = this.findNeedByName('MONEY');
     if (moneyNeed) {
@@ -283,20 +293,47 @@ BRAIN.prototype.getRandomRange= function (low, high) {
   return this.game.rnd.integerInRange(low, high);
 };
 
-BRAIN.prototype.chooseIntent = function () {
+BRAIN.prototype.pickTopNeed = function () {
+  var fallback = null;
+  var best = null;
+  var bestScore = -Infinity;
   this.sortThoughts();
+  for (var i = 0; i < this.thoughts.needs.length; i++) {
+    var needs = this.thoughts.needs[i].maslow;
+    for (var k = 0; k < needs.length; k++) {
+      var candidate = needs[k];
+      var score = candidate.weight;
+      if (!fallback) {
+        fallback = candidate;
+      }
+      if (this.profile.lastIntent && this.profile.lastIntent.need === candidate.need) {
+        score -= 0.2;
+      }
+      if (candidate.need === this.profile.favoriteNeed) {
+        score += 0.1;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = candidate;
+      }
+    }
+  }
+  return best || fallback;
+};
+
+BRAIN.prototype.chooseIntent = function () {
   var hour = this.getCurrentHour();
-  if (this.isWorkingHour(hour)) {
+  var approachingShift = hour >= this.profile.shiftStart - 1 && hour < this.profile.shiftEnd;
+  if (approachingShift && this.profile.fatigue < 90) {
     return this.buildIntent('WORK', this.profile.workplace, this.game.world.centerX, 'Heading to work', 'MONEY');
   }
 
-  if (hour >= 22 || hour < 6) {
+  if (this.profile.fatigue > 80 || hour >= 22 || hour < 6) {
     return this.buildIntent('REST', null, this.profile.homeX, 'Heading home to rest', null);
   }
 
-  var topNeed = this.thoughts.needs[0].maslow[0];
-  var requiredCost = this.getNeedCost(topNeed.need);
-  if (requiredCost > this.profile.wallet && topNeed.need !== 'MONEY') {
+  var topNeed = this.pickTopNeed();
+  if (!this.hasBudgetFor(topNeed.need) && topNeed.need !== 'MONEY') {
     return this.buildIntent('WORK', this.profile.workplace, this.game.world.centerX, "I need cash first", 'MONEY');
   }
   var doorKey = topNeed.acts[0].toLowerCase();
@@ -313,6 +350,7 @@ BRAIN.prototype.resolveIntent = function (intent) {
     if (moneyNeed) {
       moneyNeed.value = 0;
     }
+    this.profile.fatigue = Math.min(100, this.profile.fatigue + 5);
   }
 
   if (intent.type === 'FULFILL_NEED' && intent.need) {
@@ -321,6 +359,7 @@ BRAIN.prototype.resolveIntent = function (intent) {
       need.value = 0;
       var cost = this.getNeedCost(intent.need);
       this.profile.wallet = Math.max(0, this.profile.wallet - cost);
+      this.profile.fatigue = Math.max(0, this.profile.fatigue - 2);
     }
   }
 
@@ -329,8 +368,9 @@ BRAIN.prototype.resolveIntent = function (intent) {
     if (securityNeed) {
       securityNeed.value = Math.max(0, securityNeed.value - 10);
     }
+    this.profile.fatigue = Math.max(0, this.profile.fatigue - 25);
   }
-  this.profile.lastIntent = intent.type;
+  this.profile.lastIntent = intent;
 };
 
 BRAIN.prototype.setGoal = function () {

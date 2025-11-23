@@ -72,7 +72,9 @@ Pedestrian.prototype.spriteMessage = function () {
     }
 
     var walletText = " ($" + this.ai.profile.wallet + ")";
-    this.sprite_message = this.game.add.bitmapText(this.centerX, this.y - this.height / 2, 'smallfont', message + walletText, 18);
+    var fatigueText = " F:" + Math.round(this.ai.profile.fatigue);
+    var intentText = this.currentIntent && this.currentIntent.type ? " [" + this.currentIntent.type + "]" : "";
+    this.sprite_message = this.game.add.bitmapText(this.centerX, this.y - this.height / 2, 'smallfont', message + intentText + walletText + fatigueText, 18);
     this.sprite_message.anchor.setTo(0.5,0.5);
   }
 
