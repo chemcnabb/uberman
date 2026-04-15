@@ -307,7 +307,12 @@ BRAIN.prototype.generateProfile = function () {
     fatigue: this.getRandomRange(10, 40),
     savingsGoal: this.getRandomRange(25, 60),
     favoriteNeed: favoriteNeed,
-    personality: personality
+    personality: personality,
+    memory: {
+      outcomes: {},
+      venuePreferenceWeights: {},
+      maxOutcomeHistory: 8
+    }
   };
 };
 
@@ -355,6 +360,133 @@ BRAIN.prototype.getCity = function () {
   return this.game && this.game.city ? this.game.city : null;
 };
 
+BRAIN.prototype.ensureMemoryState = function () {
+  if (!this.profile.memory) {
+    this.profile.memory = { outcomes: {}, venuePreferenceWeights: {}, maxOutcomeHistory: 8 };
+  }
+  if (!this.profile.memory.outcomes) {
+    this.profile.memory.outcomes = {};
+  }
+  if (!this.profile.memory.venuePreferenceWeights) {
+    this.profile.memory.venuePreferenceWeights = {};
+  }
+  if (!this.profile.memory.maxOutcomeHistory) {
+    this.profile.memory.maxOutcomeHistory = 8;
+  }
+  return this.profile.memory;
+};
+
+BRAIN.prototype.getNeedVenueOutcomeMemory = function (needName, venue) {
+  var memory = this.ensureMemoryState();
+  if (!memory.outcomes[needName]) {
+    memory.outcomes[needName] = {};
+  }
+  if (!memory.outcomes[needName][venue]) {
+    memory.outcomes[needName][venue] = { successes: [], failures: [] };
+  }
+  return memory.outcomes[needName][venue];
+};
+
+BRAIN.prototype.getVenuePreferenceWeight = function (needName, venue) {
+  var memory = this.ensureMemoryState();
+  if (!memory.venuePreferenceWeights[needName]) {
+    memory.venuePreferenceWeights[needName] = {};
+  }
+  if (memory.venuePreferenceWeights[needName][venue] === undefined) {
+    memory.venuePreferenceWeights[needName][venue] = 1;
+  }
+  return memory.venuePreferenceWeights[needName][venue];
+};
+
+BRAIN.prototype.adjustVenuePreferenceWeight = function (needName, venue, delta) {
+  var memory = this.ensureMemoryState();
+  var current = this.getVenuePreferenceWeight(needName, venue);
+  memory.venuePreferenceWeights[needName][venue] = Math.max(0.35, Math.min(1.8, current + delta));
+};
+
+BRAIN.prototype.rememberVenueOutcome = function (needName, venue, wasSuccess) {
+  if (!needName || !venue) {
+    return;
+  }
+  var memory = this.ensureMemoryState();
+  var bucket = this.getNeedVenueOutcomeMemory(needName, venue);
+  var tick = this.profile.simTick || 0;
+  if (wasSuccess) {
+    bucket.successes.push(tick);
+    this.adjustVenuePreferenceWeight(needName, venue, 0.08);
+  } else {
+    bucket.failures.push(tick);
+    this.adjustVenuePreferenceWeight(needName, venue, -0.12);
+  }
+  if (bucket.successes.length > memory.maxOutcomeHistory) {
+    bucket.successes.shift();
+  }
+  if (bucket.failures.length > memory.maxOutcomeHistory) {
+    bucket.failures.shift();
+  }
+};
+
+BRAIN.prototype.decayRecentFailurePenalty = function (needName, venue) {
+  var bucket = this.getNeedVenueOutcomeMemory(needName, venue);
+  if (bucket.failures.length === 0) {
+    return 0;
+  }
+  var tick = this.profile.simTick || 0;
+  var penalty = 0;
+  for (var i = 0; i < bucket.failures.length; i++) {
+    var age = Math.max(0, tick - bucket.failures[i]);
+    penalty += 1.15 * Math.exp(-age / 65);
+  }
+  return Math.min(2.8, penalty);
+};
+
+BRAIN.prototype.getVenuePressurePenalty = function (venue, quote) {
+  var economy = this.getEconomy();
+  if (!economy || !economy.getVenueSnapshot) {
+    return 0;
+  }
+  var snapshot = economy.getVenueSnapshot(venue);
+  if (!snapshot) {
+    return 0;
+  }
+  var crowdPenalty = Math.max(0, snapshot.demandPressure || 0) * 0.45;
+  var queuePenalty = 0;
+  if (quote && quote.reason === 'capacity') {
+    queuePenalty = 2;
+  } else if ((snapshot.operationalCapacity || 0) <= 1) {
+    queuePenalty = 0.6;
+  }
+  return crowdPenalty + queuePenalty;
+};
+
+BRAIN.prototype.scoreVenueForNeed = function (needName, venue, quote) {
+  var weight = this.getVenuePreferenceWeight(needName, venue);
+  var memoryBonus = (weight - 1) * 1.5;
+  var failurePenalty = this.decayRecentFailurePenalty(needName, venue);
+  var pressurePenalty = this.getVenuePressurePenalty(venue, quote);
+  var costPenalty = quote && quote.price ? (quote.price * 0.02) : 0;
+  if (quote && !quote.ok) {
+    return -999;
+  }
+  return 10 + memoryBonus - failurePenalty - pressurePenalty - costPenalty;
+};
+
+BRAIN.prototype.composeMemoryRouteMessage = function (needName, chosenVenue, skippedVenue) {
+  if (!chosenVenue || !skippedVenue || chosenVenue === skippedVenue) {
+    return '';
+  }
+  var skippedBucket = this.getNeedVenueOutcomeMemory(needName, skippedVenue);
+  if (!skippedBucket.failures.length) {
+    return '';
+  }
+  var lastFailureTick = skippedBucket.failures[skippedBucket.failures.length - 1];
+  var age = (this.profile.simTick || 0) - lastFailureTick;
+  if (age > 90) {
+    return '';
+  }
+  return this.toTitleCase(skippedVenue) + ' was crowded earlier, trying ' + chosenVenue;
+};
+
 BRAIN.prototype.resolveVenueForNeed = function (needName) {
   var excludedVenues = arguments.length > 1 && arguments[1] ? arguments[1] : {};
   var need = this.findNeedByName(needName);
@@ -365,36 +497,59 @@ BRAIN.prototype.resolveVenueForNeed = function (needName) {
   var city = this.getCity();
   var economy = this.getEconomy();
 
+  var primary = need.acts[0].toLowerCase();
+  var candidates = [];
+  var seen = {};
+
   for (var i = 0; i < need.acts.length; i++) {
     var venue = need.acts[i].toLowerCase();
-    if (excludedVenues[venue]) {
+    if (excludedVenues[venue] || seen[venue]) {
       continue;
     }
+    seen[venue] = true;
     var quote = economy ? economy.requestService({ type: 'FULFILL_NEED', door: venue, need: needName }, this.profile) : { ok: true };
     if (city && !city.isVenueOperational(venue)) {
       continue;
     }
     if (quote && quote.ok) {
-      return { venue: venue, quote: quote };
+      candidates.push({
+        venue: venue,
+        quote: quote,
+        rerouted: venue !== primary,
+        score: this.scoreVenueForNeed(needName, venue, quote)
+      });
     }
   }
 
-  var primary = need.acts[0].toLowerCase();
   if (city && city.getVenueAlternatives) {
     var alternatives = city.getVenueAlternatives(primary, needName);
     for (var j = 0; j < alternatives.length; j++) {
       var alternative = alternatives[j];
-      if (excludedVenues[alternative]) {
+      if (excludedVenues[alternative] || seen[alternative]) {
         continue;
       }
+      seen[alternative] = true;
       var altQuote = economy ? economy.requestService({ type: 'FULFILL_NEED', door: alternative, need: needName }, this.profile) : { ok: true };
       if (altQuote && altQuote.ok) {
-        return { venue: alternative, quote: altQuote, rerouted: true };
+        candidates.push({
+          venue: alternative,
+          quote: altQuote,
+          rerouted: true,
+          score: this.scoreVenueForNeed(needName, alternative, altQuote)
+        });
       }
     }
   }
 
-  return null;
+  if (!candidates.length) {
+    return null;
+  }
+  candidates.sort(function (a, b) {
+    return b.score - a.score;
+  });
+  var chosen = candidates[0];
+  chosen.memoryMessage = this.composeMemoryRouteMessage(needName, chosen.venue, primary);
+  return chosen;
 };
 
 BRAIN.prototype.applyUnmetNeedPressure = function (needName, amount) {
@@ -544,6 +699,7 @@ BRAIN.prototype.handleArrival = function (intent) {
   }
 
   if (status === 'QUEUE') {
+    this.rememberVenueOutcome(intent.need, intent.door, false);
     this.applyFailureState(intent.need, 1.5, 'Queue is long and patience is thinning');
     var queueIntent = {
       type: intent.type,
@@ -558,6 +714,7 @@ BRAIN.prototype.handleArrival = function (intent) {
   }
 
   if ((status === 'CLOSED' || status === 'OUT_OF_STOCK') && intent.need) {
+    this.rememberVenueOutcome(intent.need, intent.door, false);
     this.applyFailureState(intent.need, 2.5, 'Need is still unresolved after a failed stop');
     var excluded = {};
     if (intent.door) {
@@ -577,6 +734,7 @@ BRAIN.prototype.handleArrival = function (intent) {
   }
 
   if (status === 'TOO_EXPENSIVE') {
+    this.rememberVenueOutcome(intent.need, intent.door, false);
     if (intent.need) {
       this.applyFailureState(intent.need, 3, 'Prices spiked and the need remains urgent');
     }
@@ -586,6 +744,7 @@ BRAIN.prototype.handleArrival = function (intent) {
   }
 
   if (intent.need) {
+    this.rememberVenueOutcome(intent.need, intent.door, false);
     this.applyFailureState(intent.need, 2, 'Could not get service, holding the plan');
   }
   this.queueDeferredIntent(intent);
@@ -699,6 +858,36 @@ BRAIN.prototype.initializeNeedRuntimeData = function () {
   }
 };
 
+BRAIN.prototype.decayMemory = function () {
+  var memory = this.ensureMemoryState();
+  var revertRate = 0.004;
+  var pruneAfterTicks = 240;
+  var tick = this.profile.simTick || 0;
+  var needKeys = Object.keys(memory.venuePreferenceWeights);
+  for (var i = 0; i < needKeys.length; i++) {
+    var needName = needKeys[i];
+    var venueWeights = memory.venuePreferenceWeights[needName];
+    var venues = Object.keys(venueWeights);
+    for (var j = 0; j < venues.length; j++) {
+      var venue = venues[j];
+      var current = venueWeights[venue];
+      venueWeights[venue] = current + (1 - current) * revertRate;
+    }
+  }
+
+  var outcomeNeeds = Object.keys(memory.outcomes);
+  for (var n = 0; n < outcomeNeeds.length; n++) {
+    var outcomeNeed = outcomeNeeds[n];
+    var outcomeVenues = Object.keys(memory.outcomes[outcomeNeed]);
+    for (var v = 0; v < outcomeVenues.length; v++) {
+      var key = outcomeVenues[v];
+      var bucket = memory.outcomes[outcomeNeed][key];
+      bucket.successes = bucket.successes.filter(function (t) { return (tick - t) <= pruneAfterTicks; });
+      bucket.failures = bucket.failures.filter(function (t) { return (tick - t) <= pruneAfterTicks; });
+    }
+  }
+};
+
 BRAIN.prototype.getTierName = function (tierIndex) {
   var order = this.needBalancing.tierOrder;
   return order[tierIndex] || order[order.length - 1];
@@ -764,6 +953,7 @@ BRAIN.prototype.getWeight= function (x,y,i) {
 
 BRAIN.prototype.life = function () {
   this.profile.simTick += 1;
+  this.decayMemory();
   var lowerTierStable = true;
   for ( var i = 0; i < this.thoughts.needs.length; i++) {
     var needs = this.thoughts.needs[i];
@@ -882,7 +1072,9 @@ BRAIN.prototype.chooseIntent = function () {
   var intent = this.buildIntent('FULFILL_NEED', route.venue, this.game.world.centerX, topNeed.emotion, topNeed.need);
   intent.quote = route.quote;
   intent.rerouted = !!route.rerouted;
-  if (intent.rerouted) {
+  if (route.memoryMessage) {
+    intent.message = route.memoryMessage + '. ' + this.describeIntent('FULFILL_NEED', { need: topNeed.need, emotion: topNeed.emotion, price: intent.quote && intent.quote.price });
+  } else if (intent.rerouted) {
     intent.message = 'Rerouting to ' + route.venue + ' due to disruption. ' + this.describeIntent('FULFILL_NEED', { need: topNeed.need, emotion: topNeed.emotion, price: intent.quote && intent.quote.price });
   } else {
     intent.message = this.describeIntent('FULFILL_NEED', { need: topNeed.need, emotion: topNeed.emotion, price: intent.quote && intent.quote.price });
@@ -917,6 +1109,7 @@ BRAIN.prototype.resolveIntent = function (intent) {
   if (intent.type === 'FULFILL_NEED' && intent.need) {
     var need = this.findNeedByName(intent.need);
     if (need && (!settlement || settlement.ok)) {
+      this.rememberVenueOutcome(intent.need, intent.door, true);
       var recovery = this.getNeedCurve(intent.need).recoveryOnResolve;
       need.value = this.clampNeedValue(need.value - recovery);
       need.emotion = "That helped; the pressure eased for now";
@@ -931,6 +1124,7 @@ BRAIN.prototype.resolveIntent = function (intent) {
         this.profile.venueHistory.shift();
       }
     } else if (need && settlement && !settlement.ok) {
+      this.rememberVenueOutcome(intent.need, intent.door, false);
       need.value = this.clampNeedValue(need.value + 2);
       this.applyUnmetNeedPressure(intent.need, 2);
       need.emotion = "Didn't get served; still chasing relief";
