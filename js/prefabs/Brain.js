@@ -1,6 +1,8 @@
+var NEED_BALANCING = require('../data/brainNeedBalancing.json');
 
 BRAIN = function (game) {
   this.game = game;
+  this.needBalancing = NEED_BALANCING;
   this.profile = this.generateProfile();
   this.thoughts = {
     "needs": [
@@ -239,6 +241,9 @@ BRAIN = function (game) {
   };
 
   this.profile = this.generateProfile();
+  this.profile.simTick = 0;
+  this.profile.venueHistory = [];
+  this.initializeNeedRuntimeData();
 
 
 };
@@ -395,8 +400,7 @@ BRAIN.prototype.resolveVenueForNeed = function (needName) {
 BRAIN.prototype.applyUnmetNeedPressure = function (needName, amount) {
   var need = this.findNeedByName(needName);
   if (need) {
-    need.value += amount || 3;
-    need.weight += (amount || 3) * 0.06;
+    need.value = this.clampNeedValue(need.value + (amount || 3));
   }
   var economy = this.getEconomy();
   if (economy && economy.registerUnmetNeed) {
@@ -456,8 +460,7 @@ BRAIN.prototype.applyFailureState = function (needName, pressure, emotion) {
     return;
   }
   var amount = pressure || 2;
-  need.value += amount;
-  need.weight += amount * 0.08;
+  need.value = this.clampNeedValue(need.value + amount);
   if (emotion) {
     need.emotion = emotion;
   }
@@ -684,30 +687,110 @@ BRAIN.prototype.describeIntent = function (type, data) {
   return data && data.emotion ? data.emotion : 'On the move';
 };
 
+BRAIN.prototype.initializeNeedRuntimeData = function () {
+  for (var i = 0; i < this.thoughts.needs.length; i++) {
+    var tierName = this.getTierName(i);
+    var tierNeeds = this.thoughts.needs[i].maslow;
+    for (var j = 0; j < tierNeeds.length; j++) {
+      tierNeeds[j].tier = tierName;
+      tierNeeds[j].lastServedVenue = null;
+      tierNeeds[j].lastServedTick = -99999;
+    }
+  }
+};
+
+BRAIN.prototype.getTierName = function (tierIndex) {
+  var order = this.needBalancing.tierOrder;
+  return order[tierIndex] || order[order.length - 1];
+};
+
+BRAIN.prototype.clampNeedValue = function (value) {
+  var clamp = this.needBalancing.clamp;
+  return Math.max(clamp.min, Math.min(clamp.max, value));
+};
+
+BRAIN.prototype.getNeedCurve = function (needName) {
+  var curves = this.needBalancing.needCurves || {};
+  return curves[needName] || this.needBalancing.defaultCurve;
+};
+
+BRAIN.prototype.getTierGateMultiplier = function (tierIndex, lowerTierStable, normalizedDeficit) {
+  var gating = this.needBalancing.gating;
+  if (tierIndex === 0) {
+    return 1;
+  }
+  if (lowerTierStable) {
+    return 1 + gating.stableLowerTierBoost * normalizedDeficit;
+  }
+  return gating.unstableLowerTierMultiplier;
+};
+
+BRAIN.prototype.getNeedCooldownPenalty = function (need) {
+  if (!need) {
+    return 0;
+  }
+  var cooldown = this.needBalancing.cooldown;
+  var history = this.profile.venueHistory || [];
+  if (!need.lastServedVenue || history.length === 0) {
+    return 0;
+  }
+
+  var repeatCount = 0;
+  for (var i = history.length - 1; i >= 0; i--) {
+    if ((this.profile.simTick - history[i].tick) > cooldown.lookbackTicks) {
+      break;
+    }
+    if (history[i].venue === need.lastServedVenue) {
+      repeatCount += 1;
+    }
+  }
+
+  var sinceLastServed = this.profile.simTick - (need.lastServedTick || 0);
+  if (sinceLastServed <= cooldown.graceTicks) {
+    repeatCount += cooldown.recentVisitBonusCount;
+  }
+  return repeatCount * cooldown.penaltyPerRepeat;
+};
+
 BRAIN.prototype.getWeight= function (x,y,i) {
-  return ( (y*(i+1)-y*(i))/(x*(i+1)-x*(i)) - (y*(i)-y*(i-1))/(x*(i)-x*(i-1))/(x*(i+1)-x*(i-1)));
+  var clampedValue = this.clampNeedValue(y);
+  var tierName = this.getTierName(i);
+  var tierUrgency = this.needBalancing.tierUrgency[tierName] || 1;
+  var normalizedDeficit = (this.needBalancing.clamp.max - clampedValue) / this.needBalancing.clamp.max;
+  normalizedDeficit = Math.max(0, Math.min(1, normalizedDeficit));
+  var deficitCurve = Math.pow(normalizedDeficit, this.needBalancing.weightCurve.deficitExponent);
+  return x * tierUrgency * (this.needBalancing.weightCurve.baseline + deficitCurve);
 };
 
 BRAIN.prototype.life = function () {
+  this.profile.simTick += 1;
+  var lowerTierStable = true;
   for ( var i = 0; i < this.thoughts.needs.length; i++) {
     var needs = this.thoughts.needs[i];
+    var tierDeficitPeak = 0;
     for(var j = 0; j< needs.maslow.length;j++){
-      needs.maslow[j].value += 0.01;
-      needs.maslow[j].weight = this.getWeight(needs.maslow[j].baseWeight,needs.maslow[j].value,i);
+      var need = needs.maslow[j];
+      var curve = this.getNeedCurve(need.need);
+      need.value = this.clampNeedValue(need.value + curve.decayPerTick - curve.passiveRecoveryPerTick);
+      var normalizedDeficit = (this.needBalancing.clamp.max - need.value) / this.needBalancing.clamp.max;
+      tierDeficitPeak = Math.max(tierDeficitPeak, normalizedDeficit);
+      var gateMultiplier = this.getTierGateMultiplier(i, lowerTierStable, normalizedDeficit);
+      need.weight = this.getWeight(need.baseWeight, need.value, i) * gateMultiplier;
+      need.weight = Math.max(0, need.weight - this.getNeedCooldownPenalty(need));
     }
+    lowerTierStable = lowerTierStable && tierDeficitPeak <= this.needBalancing.gating.lowerTierDeficitThreshold;
   }
   this.profile.fatigue = Math.min(100, this.profile.fatigue + 0.05);
   if (this.profile.wallet < 10) {
     var moneyNeed = this.findNeedByName('MONEY');
     if (moneyNeed) {
-      moneyNeed.value += 0.5;
-      moneyNeed.weight += 0.2;
+      moneyNeed.value = this.clampNeedValue(moneyNeed.value + 0.5);
     }
   }
   if (this.getCurrentHour() > 21 || this.getCurrentHour() < 6) {
     var warmthNeed = this.findNeedByName('WARMTH');
     if (warmthNeed) {
-      warmthNeed.weight += 0.05;
+      warmthNeed.value = this.clampNeedValue(warmthNeed.value - 0.3);
     }
   }
 };
@@ -823,7 +906,7 @@ BRAIN.prototype.resolveIntent = function (intent) {
     }
     var moneyNeed = this.findNeedByName('MONEY');
     if (moneyNeed && (!settlement || settlement.ok)) {
-      moneyNeed.value = 0;
+      moneyNeed.value = this.clampNeedValue(moneyNeed.value - this.getNeedCurve('MONEY').recoveryOnResolve);
       moneyNeed.emotion = "Wallet's breathing again after that shift";
     }
     if (!settlement || settlement.ok) {
@@ -834,11 +917,21 @@ BRAIN.prototype.resolveIntent = function (intent) {
   if (intent.type === 'FULFILL_NEED' && intent.need) {
     var need = this.findNeedByName(intent.need);
     if (need && (!settlement || settlement.ok)) {
-      need.value = 0;
+      var recovery = this.getNeedCurve(intent.need).recoveryOnResolve;
+      need.value = this.clampNeedValue(need.value - recovery);
       need.emotion = "That helped; the pressure eased for now";
       this.profile.fatigue = Math.max(0, this.profile.fatigue - 2);
+      need.lastServedVenue = intent.door || null;
+      need.lastServedTick = this.profile.simTick;
+      this.profile.venueHistory.push({
+        venue: intent.door || 'unknown',
+        tick: this.profile.simTick
+      });
+      if (this.profile.venueHistory.length > this.needBalancing.cooldown.historyLimit) {
+        this.profile.venueHistory.shift();
+      }
     } else if (need && settlement && !settlement.ok) {
-      need.value += 2;
+      need.value = this.clampNeedValue(need.value + 2);
       this.applyUnmetNeedPressure(intent.need, 2);
       need.emotion = "Didn't get served; still chasing relief";
     }
