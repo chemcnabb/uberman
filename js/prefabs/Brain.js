@@ -345,6 +345,59 @@ BRAIN.prototype.getEconomy = function () {
   return this.game && this.game.economy ? this.game.economy : null;
 };
 
+
+BRAIN.prototype.getCity = function () {
+  return this.game && this.game.city ? this.game.city : null;
+};
+
+BRAIN.prototype.resolveVenueForNeed = function (needName) {
+  var need = this.findNeedByName(needName);
+  if (!need || !need.acts || need.acts.length === 0) {
+    return null;
+  }
+
+  var city = this.getCity();
+  var economy = this.getEconomy();
+
+  for (var i = 0; i < need.acts.length; i++) {
+    var venue = need.acts[i].toLowerCase();
+    var quote = economy ? economy.requestService({ type: 'FULFILL_NEED', door: venue, need: needName }, this.profile) : { ok: true };
+    if (city && !city.isVenueOperational(venue)) {
+      continue;
+    }
+    if (quote && quote.ok) {
+      return { venue: venue, quote: quote };
+    }
+  }
+
+  var primary = need.acts[0].toLowerCase();
+  if (city && city.getVenueAlternatives) {
+    var alternatives = city.getVenueAlternatives(primary, needName);
+    for (var j = 0; j < alternatives.length; j++) {
+      var alternative = alternatives[j];
+      var altQuote = economy ? economy.requestService({ type: 'FULFILL_NEED', door: alternative, need: needName }, this.profile) : { ok: true };
+      if (altQuote && altQuote.ok) {
+        return { venue: alternative, quote: altQuote, rerouted: true };
+      }
+    }
+  }
+
+  return null;
+};
+
+BRAIN.prototype.applyUnmetNeedPressure = function (needName, amount) {
+  var need = this.findNeedByName(needName);
+  if (need) {
+    need.value += amount || 3;
+    need.weight += (amount || 3) * 0.06;
+  }
+  var economy = this.getEconomy();
+  if (economy && economy.registerUnmetNeed) {
+    economy.registerUnmetNeed(needName, 0.35);
+  }
+};
+
+
 BRAIN.prototype.attachServiceQuote = function (intent) {
   if (!intent) {
     return intent;
@@ -569,10 +622,22 @@ BRAIN.prototype.chooseIntent = function () {
     brokeIntent.message = this.describeIntent('WORK', { need: 'MONEY' });
     return this.attachServiceQuote(brokeIntent);
   }
-  var doorKey = topNeed.acts[0].toLowerCase();
-  var intent = this.buildIntent('FULFILL_NEED', doorKey, this.game.world.centerX, topNeed.emotion, topNeed.need);
-  intent = this.attachServiceQuote(intent);
-  intent.message = this.describeIntent('FULFILL_NEED', { need: topNeed.need, emotion: topNeed.emotion, price: intent.quote && intent.quote.price });
+  var route = this.resolveVenueForNeed(topNeed.need);
+  if (!route) {
+    this.applyUnmetNeedPressure(topNeed.need, 4);
+    var fallbackIntent = this.buildIntent('REST', null, this.profile.homeX, 'No safe venue is open; heading home', topNeed.need);
+    fallbackIntent.message = this.describeIntent('REST') + ' Service outage is making needs worse.';
+    return fallbackIntent;
+  }
+
+  var intent = this.buildIntent('FULFILL_NEED', route.venue, this.game.world.centerX, topNeed.emotion, topNeed.need);
+  intent.quote = route.quote;
+  intent.rerouted = !!route.rerouted;
+  if (intent.rerouted) {
+    intent.message = 'Rerouting to ' + route.venue + ' due to disruption. ' + this.describeIntent('FULFILL_NEED', { need: topNeed.need, emotion: topNeed.emotion, price: intent.quote && intent.quote.price });
+  } else {
+    intent.message = this.describeIntent('FULFILL_NEED', { need: topNeed.need, emotion: topNeed.emotion, price: intent.quote && intent.quote.price });
+  }
   return intent;
 };
 
@@ -604,6 +669,7 @@ BRAIN.prototype.resolveIntent = function (intent) {
       this.profile.fatigue = Math.max(0, this.profile.fatigue - 2);
     } else if (need && settlement && !settlement.ok) {
       need.value += 2;
+      this.applyUnmetNeedPressure(intent.need, 2);
     }
     if (!economy && need) {
       var cost = this.getNeedCost(intent.need);

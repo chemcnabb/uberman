@@ -63,6 +63,7 @@ Uberman.Game.prototype = {
     this.game.back = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2100, 'city_background');
     this.game.fore = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2133, 'city_foreground');
     this.city = new City(this.game, 0,0);
+    this.game.city = this.city;
 
 
   },

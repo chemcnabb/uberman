@@ -41,6 +41,11 @@ HUD = function (game,  x, y) {
   // just a property we can tween so the bar has a progress to show
   this.barProgress = 128;
 
+  this.cityDebugText = this.game.add.bitmapText(0, 0, 'smallfont', '', 14);
+  this.cityDebugText.fixedToCamera = true;
+  this.cityDebugText.cameraOffset.setTo(18, 140);
+  this.cityDebugText.maxWidth = 420;
+  this.cityDebugText.align = 'left';
 
 };
 
@@ -104,6 +109,12 @@ HUD.prototype.update = function() {
 
   // important - without this line, the context will never be updated on the GPU when using webGL
   this.bar.dirty = true;
+
+  if (this.game.city && this.game.city.getDebugDamageLines) {
+    var damageLines = this.game.city.getDebugDamageLines();
+    this.cityDebugText.text = damageLines.join('\n');
+  }
+
   this.animateDamage();
 };
 

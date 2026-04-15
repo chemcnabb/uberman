@@ -3,6 +3,8 @@ var Economy = function (game) {
   this.rebalanceIntervalMs = 12000;
   this.timeSinceRebalance = 0;
   this.lastRebalanceAt = 0;
+  this.cityInstability = 0;
+  this.disruption = {};
 
   this.venueOrder = ['bank', 'bakery', 'cafe', 'library', 'bookstore'];
   this.needVenueMap = {
@@ -109,6 +111,33 @@ Economy.prototype.createVenue = function (key, options) {
   return venue;
 };
 
+
+Economy.prototype.applyDisruptionSnapshot = function (venueStatus, instability) {
+  this.disruption = venueStatus || {};
+  this.cityInstability = Math.max(0, instability || 0);
+};
+
+Economy.prototype.getDisruptionForVenue = function (venueKey) {
+  return this.disruption && this.disruption[venueKey] ? this.disruption[venueKey] : null;
+};
+
+Economy.prototype.isVenueClosedForDisruption = function (venueKey) {
+  var disruption = this.getDisruptionForVenue(venueKey);
+  return !!(disruption && disruption.state === 'destroyed');
+};
+
+Economy.prototype.getOperationalCapacity = function (venue) {
+  var disruption = this.getDisruptionForVenue(venue.key);
+  var multiplier = disruption && disruption.capacityModifier !== undefined ? disruption.capacityModifier : 1;
+  return Math.max(0, Math.floor(venue.serviceCapacity * multiplier));
+};
+
+Economy.prototype.getOperationalInventory = function (venue) {
+  var disruption = this.getDisruptionForVenue(venue.key);
+  var multiplier = disruption && disruption.inventoryModifier !== undefined ? disruption.inventoryModifier : 1;
+  return Math.max(0, Math.floor(venue.inventory * multiplier));
+};
+
 Economy.prototype.resolveVenueForIntent = function (intent) {
   if (!intent) {
     return null;
@@ -129,14 +158,15 @@ Economy.prototype.computeDynamicPrice = function (venue) {
     shortageRatio = Math.max(0, Math.min(1, shortageRatio));
   }
   var pressure = Math.max(0, Math.min(2, venue.demandPressure));
-  var multiplier = 1 + (shortageRatio * 0.8) + (pressure * 0.45);
+  var disruptionTax = this.cityInstability * 0.35;
+  var multiplier = 1 + (shortageRatio * 0.8) + (pressure * 0.45) + disruptionTax;
   var minPrice = venue.basePrice * 0.6;
   var maxPrice = venue.basePrice * 2.5;
   return Math.max(minPrice, Math.min(maxPrice, venue.basePrice * multiplier));
 };
 
 Economy.prototype.hasCapacity = function (venue) {
-  return venue.cycleRequests <= venue.serviceCapacity;
+  return venue.cycleRequests <= this.getOperationalCapacity(venue);
 };
 
 Economy.prototype.hasInventory = function (venue, intent) {
@@ -146,7 +176,7 @@ Economy.prototype.hasInventory = function (venue, intent) {
   if (venue.inventoryMax <= 0) {
     return true;
   }
-  return venue.inventory > 0;
+  return this.getOperationalInventory(venue) > 0;
 };
 
 Economy.prototype.requestService = function (intent, actorProfile) {
@@ -169,12 +199,13 @@ Economy.prototype.requestService = function (intent, actorProfile) {
   venue.cycleRequests += 1;
   venue.dynamicPrice = this.computeDynamicPrice(venue);
 
-  quote.capacity = Math.max(0, venue.serviceCapacity - venue.cycleRequests);
-  quote.inventory = venue.inventory;
-  quote.open = venue.open;
+  quote.capacity = Math.max(0, this.getOperationalCapacity(venue) - venue.cycleRequests);
+  quote.inventory = this.getOperationalInventory(venue);
+  var disruption = this.getDisruptionForVenue(venueKey);
+  quote.open = venue.open && !(disruption && disruption.state === 'destroyed');
   quote.price = Math.ceil(venue.dynamicPrice);
 
-  if (!venue.open) {
+  if (!quote.open) {
     venue.cycleFailures += 1;
     venue.accounting.failedRequests += 1;
     quote.reason = 'closed';
@@ -215,6 +246,15 @@ Economy.prototype.applyExpense = function (venue, amount, expenseType) {
   if (expenseType && venue.accounting[expenseType] !== undefined) {
     venue.accounting[expenseType] += amount;
   }
+};
+
+Economy.prototype.registerUnmetNeed = function (needName, pressure) {
+  var venueKey = this.needVenueMap[needName];
+  if (!venueKey || !this.venues[venueKey]) {
+    return;
+  }
+  var venue = this.venues[venueKey];
+  venue.demandPressure = Math.min(2.5, venue.demandPressure + (pressure || 0.25));
 };
 
 Economy.prototype.settleTransaction = function (intent, actorProfile) {
@@ -328,11 +368,19 @@ Economy.prototype.rebalanceVenue = function (venue) {
     this.applyExpense(venue, baselinePayroll, 'payroll');
   }
 
+  var disruption = this.getDisruptionForVenue(venue.key);
+  var disruptionClosed = disruption && disruption.state === 'destroyed';
+
   if (venue.balance < -120 && venue.inventoryMax > 0) {
     venue.open = false;
-  } else if (venue.balance > -30) {
+  } else if (venue.balance > -30 && !disruptionClosed) {
     venue.open = true;
   }
+
+  var shortageStress = Math.max(0, shortageRatio - 0.2) * 1.8;
+  var disruptionStress = this.cityInstability * 0.5 + (disruption && disruption.state !== 'stable' ? 0.25 : 0);
+  var wageTarget = venue.wage * (1 + shortageStress + disruptionStress);
+  venue.wage = Math.max(5, Math.min(45, Math.floor((venue.wage * 0.75) + (wageTarget * 0.25))));
 
   venue.dynamicPrice = this.computeDynamicPrice(venue);
   venue.cycleRequests = 0;
@@ -371,7 +419,11 @@ Economy.prototype.getVenueSnapshot = function (key) {
     accounting: venue.accounting,
     balance: venue.balance,
     seats: venue.seats,
-    tellerSlots: venue.tellerSlots
+    tellerSlots: venue.tellerSlots,
+    operationalCapacity: this.getOperationalCapacity(venue),
+    operationalInventory: this.getOperationalInventory(venue),
+    instability: this.cityInstability,
+    disruption: this.getDisruptionForVenue(key)
   };
 };
 
