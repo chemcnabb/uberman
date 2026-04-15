@@ -180,17 +180,49 @@ Pedestrian.prototype.removePedestrian = function (next, sprite) {
   if (arrival && arrival.bubbleMessage) {
     sprite.sprite_message = arrival.bubbleMessage;
   }
-  sprite.visible = false;
-  var waitMs = arrival && arrival.waitMs ? arrival.waitMs : Phaser.Timer.SECOND*4;
-  var timer = sprite.game.time.events.add(waitMs, next, sprite);
+
+  if (sprite.move_tween && sprite.move_tween.isRunning) {
+    sprite.move_tween.stop();
+  }
+  sprite.animations.stop();
+  sprite.isMoving = false;
+
+  if (sprite.messageContainer) {
+    sprite.messageContainer.destroy();
+    sprite.messageContainer = null;
+    sprite.messageText = null;
+    sprite.messageBubble = null;
+  }
+
+  sprite.kill();
+
+  var waitMs = arrival && arrival.waitMs ? arrival.waitMs : Phaser.Timer.SECOND * 4;
+  sprite.game.time.events.add(waitMs, next, sprite);
 
 };
 
 Pedestrian.prototype.putBack = function () {
-  this.visible = true;
+  var spawnPadding = 200;
+  this.revive();
+
   this.currentIntent = this.ai.consumeDeferredIntent() || this.ai.chooseIntent();
   this.goal = this.currentIntent.goal;
   this.lastMessage = null;
+  this.isDistracted = false;
+  this.distractionLine = null;
+
+  this.x = (this.goal < this.game.world.centerX) ?
+    this.game.world.width + this.game.rnd.integerInRange(0, spawnPadding) :
+    this.game.world.x - this.game.rnd.integerInRange(0, spawnPadding);
+
+  this.y = this.game.world.height - 260;
+
+  if (!this.isWalking()) {
+    this.anim = this.anim.replace("-wait", "-walk");
+  }
+
+  this.direction = this.setDirection();
+  this.check_animation();
 
 };
 
