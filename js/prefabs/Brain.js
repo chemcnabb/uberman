@@ -317,6 +317,13 @@ BRAIN.prototype.isWorkingHour = function (hour) {
 };
 
 BRAIN.prototype.getNeedCost = function (need) {
+  var economy = this.game && this.game.economy;
+  if (economy && economy.needVenueMap && economy.needVenueMap[need]) {
+    var venueSnapshot = economy.getVenueSnapshot(economy.needVenueMap[need]);
+    if (venueSnapshot && venueSnapshot.price !== undefined) {
+      return venueSnapshot.price;
+    }
+  }
   var costs = {
     WATER: 3,
     FOOD: 6,
@@ -332,6 +339,23 @@ BRAIN.prototype.hasBudgetFor = function (needName) {
   var cost = this.getNeedCost(needName);
   var reserve = Math.floor(this.profile.savingsGoal * 0.5);
   return (this.profile.wallet - cost) >= reserve;
+};
+
+BRAIN.prototype.getEconomy = function () {
+  return this.game && this.game.economy ? this.game.economy : null;
+};
+
+BRAIN.prototype.attachServiceQuote = function (intent) {
+  if (!intent) {
+    return intent;
+  }
+  var economy = this.getEconomy();
+  if (!economy) {
+    intent.quote = { ok: true, price: this.getNeedCost(intent.need), reason: 'legacy' };
+    return intent;
+  }
+  intent.quote = economy.requestService(intent, this.profile);
+  return intent;
 };
 
 BRAIN.prototype.findNeedByName = function (name) {
@@ -435,7 +459,7 @@ BRAIN.prototype.describeIntent = function (type, data) {
   }
   if (type === 'FULFILL_NEED' && data && data.need) {
     var thought = this.composeNeedThought(data.need, data.emotion);
-    var cost = this.getNeedCost(data.need);
+    var cost = data.price !== undefined ? data.price : this.getNeedCost(data.need);
     return cost ? thought + ' ($' + cost + ')' : thought;
   }
   return data && data.emotion ? data.emotion : 'On the move';
@@ -530,7 +554,7 @@ BRAIN.prototype.chooseIntent = function () {
   if (approachingShift && this.profile.fatigue < 90) {
     var workIntent = this.buildIntent('WORK', this.profile.workplace, this.game.world.centerX, 'Heading to work', 'MONEY');
     workIntent.message = this.describeIntent('WORK', { need: 'MONEY' });
-    return workIntent;
+    return this.attachServiceQuote(workIntent);
   }
 
   if (this.profile.fatigue > 80 || hour >= 22 || hour < 6) {
@@ -543,11 +567,12 @@ BRAIN.prototype.chooseIntent = function () {
   if (!this.hasBudgetFor(topNeed.need) && topNeed.need !== 'MONEY') {
     var brokeIntent = this.buildIntent('WORK', this.profile.workplace, this.game.world.centerX, "I need cash first", 'MONEY');
     brokeIntent.message = this.describeIntent('WORK', { need: 'MONEY' });
-    return brokeIntent;
+    return this.attachServiceQuote(brokeIntent);
   }
   var doorKey = topNeed.acts[0].toLowerCase();
   var intent = this.buildIntent('FULFILL_NEED', doorKey, this.game.world.centerX, topNeed.emotion, topNeed.need);
-  intent.message = this.describeIntent('FULFILL_NEED', { need: topNeed.need, emotion: topNeed.emotion });
+  intent = this.attachServiceQuote(intent);
+  intent.message = this.describeIntent('FULFILL_NEED', { need: topNeed.need, emotion: topNeed.emotion, price: intent.quote && intent.quote.price });
   return intent;
 };
 
@@ -555,10 +580,18 @@ BRAIN.prototype.resolveIntent = function (intent) {
   if (!intent) {
     return;
   }
+  var economy = this.getEconomy();
+  var settlement = null;
+  if (economy) {
+    settlement = economy.settleTransaction(intent, this.profile);
+    this.profile.wallet = Math.max(0, this.profile.wallet + settlement.walletDelta);
+  }
   if (intent.type === 'WORK') {
-    this.profile.wallet += this.profile.income;
+    if (!economy) {
+      this.profile.wallet += this.profile.income;
+    }
     var moneyNeed = this.findNeedByName('MONEY');
-    if (moneyNeed) {
+    if (moneyNeed && (!settlement || settlement.ok)) {
       moneyNeed.value = 0;
     }
     this.profile.fatigue = Math.min(100, this.profile.fatigue + 5);
@@ -566,11 +599,15 @@ BRAIN.prototype.resolveIntent = function (intent) {
 
   if (intent.type === 'FULFILL_NEED' && intent.need) {
     var need = this.findNeedByName(intent.need);
-    if (need) {
+    if (need && (!settlement || settlement.ok)) {
       need.value = 0;
+      this.profile.fatigue = Math.max(0, this.profile.fatigue - 2);
+    } else if (need && settlement && !settlement.ok) {
+      need.value += 2;
+    }
+    if (!economy && need) {
       var cost = this.getNeedCost(intent.need);
       this.profile.wallet = Math.max(0, this.profile.wallet - cost);
-      this.profile.fatigue = Math.max(0, this.profile.fatigue - 2);
     }
   }
 
@@ -581,6 +618,7 @@ BRAIN.prototype.resolveIntent = function (intent) {
     }
     this.profile.fatigue = Math.max(0, this.profile.fatigue - 25);
   }
+  intent.outcome = settlement;
   this.profile.lastIntent = intent;
 };
 

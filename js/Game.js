@@ -6,6 +6,7 @@ var DayCycle = require('./prefabs/DayCycle');
 var Car = require('./prefabs/Car');
 var Hud = require('./prefabs/Hud');
 var City = require('./prefabs/City');
+var Economy = require('./sim/Economy');
 
 
 Uberman.Game = function (game) {
@@ -193,6 +194,8 @@ Uberman.Game.prototype = {
 
 
 
+    this.game.economy = new Economy(this.game);
+
     var pedestrians = this.game.add.group();
     for (var i = 0; i < this.numpredestrians; i++) {
       var pedestrian = new Pedestrian(this.game, this.game.world.height - 260, "pedestrian");
@@ -216,6 +219,9 @@ Uberman.Game.prototype = {
   update: function () {
 
     this.game.physics.arcade.collide(this.game.player, platforms);
+    if (this.game.economy) {
+      this.game.economy.update(this.game.time.elapsedMS || 16);
+    }
     this.city.update();
 
   },
