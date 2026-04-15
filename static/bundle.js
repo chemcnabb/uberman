@@ -104,6 +104,7 @@ Uberman.Game.prototype = {
     this.game.back = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2100, 'city_background');
     this.game.fore = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2133, 'city_foreground');
     this.city = new City(this.game, 0,0);
+    this.game.city = this.city;
 
 
   },
@@ -273,7 +274,7 @@ Uberman.Game.prototype = {
 };
 
 module.exports = Uberman.Game;
-},{"./prefabs/Car":7,"./prefabs/City":8,"./prefabs/DayCycle":9,"./prefabs/Hero":10,"./prefabs/Hud":11,"./prefabs/Pedestrian":12,"./sim/Economy":13}],3:[function(require,module,exports){
+},{"./prefabs/Car":8,"./prefabs/City":9,"./prefabs/DayCycle":10,"./prefabs/Hero":11,"./prefabs/Hud":12,"./prefabs/Pedestrian":13,"./sim/Economy":14}],3:[function(require,module,exports){
 var Uberman = Uberman || {};
 
 
@@ -475,9 +476,67 @@ var size = {
 })(size);
 
 },{"./Boot":1,"./Game":2,"./MainMenu":3,"./Preloader":4}],6:[function(require,module,exports){
+module.exports={
+  "tierOrder": [
+    "physiological",
+    "safety",
+    "social",
+    "esteem",
+    "selfActualization"
+  ],
+  "tierUrgency": {
+    "physiological": 1.8,
+    "safety": 1.4,
+    "social": 1.15,
+    "esteem": 1.0,
+    "selfActualization": 0.85
+  },
+  "clamp": {
+    "min": 0,
+    "max": 100
+  },
+  "weightCurve": {
+    "baseline": 0.25,
+    "deficitExponent": 1.35
+  },
+  "defaultCurve": {
+    "decayPerTick": 0.08,
+    "passiveRecoveryPerTick": 0.0,
+    "recoveryOnResolve": 55
+  },
+  "needCurves": {
+    "WATER": { "decayPerTick": 0.18, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 82 },
+    "FOOD": { "decayPerTick": 0.15, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 78 },
+    "SECURITY": { "decayPerTick": 0.1, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 60 },
+    "MONEY": { "decayPerTick": 0.12, "passiveRecoveryPerTick": 0.0, "recoveryOnResolve": 70 },
+    "WARMTH": { "decayPerTick": 0.11, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 62 },
+    "FRIENDSHIP": { "decayPerTick": 0.09, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 58 },
+    "INTIMACY": { "decayPerTick": 0.08, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 56 },
+    "FAMILY": { "decayPerTick": 0.08, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 56 },
+    "CONFIDENCE": { "decayPerTick": 0.07, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 54 },
+    "ART": { "decayPerTick": 0.06, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 52 },
+    "EDUCATION": { "decayPerTick": 0.06, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 52 }
+  },
+  "gating": {
+    "lowerTierDeficitThreshold": 0.35,
+    "unstableLowerTierMultiplier": 0.55,
+    "stableLowerTierBoost": 0.65
+  },
+  "cooldown": {
+    "lookbackTicks": 240,
+    "graceTicks": 45,
+    "penaltyPerRepeat": 0.35,
+    "recentVisitBonusCount": 1,
+    "historyLimit": 40
+  }
+}
+
+},{}],7:[function(require,module,exports){
+var NEED_BALANCING = require('../data/brainNeedBalancing.json');
 
 BRAIN = function (game) {
   this.game = game;
+  this.needBalancing = NEED_BALANCING;
   this.profile = this.generateProfile();
   this.thoughts = {
     "needs": [
@@ -716,6 +775,9 @@ BRAIN = function (game) {
   };
 
   this.profile = this.generateProfile();
+  this.profile.simTick = 0;
+  this.profile.venueHistory = [];
+  this.initializeNeedRuntimeData();
 
 
 };
@@ -779,7 +841,12 @@ BRAIN.prototype.generateProfile = function () {
     fatigue: this.getRandomRange(10, 40),
     savingsGoal: this.getRandomRange(25, 60),
     favoriteNeed: favoriteNeed,
-    personality: personality
+    personality: personality,
+    memory: {
+      outcomes: {},
+      venuePreferenceWeights: {},
+      maxOutcomeHistory: 8
+    }
   };
 };
 
@@ -822,6 +889,215 @@ BRAIN.prototype.getEconomy = function () {
   return this.game && this.game.economy ? this.game.economy : null;
 };
 
+
+BRAIN.prototype.getCity = function () {
+  return this.game && this.game.city ? this.game.city : null;
+};
+
+BRAIN.prototype.ensureMemoryState = function () {
+  if (!this.profile.memory) {
+    this.profile.memory = { outcomes: {}, venuePreferenceWeights: {}, maxOutcomeHistory: 8 };
+  }
+  if (!this.profile.memory.outcomes) {
+    this.profile.memory.outcomes = {};
+  }
+  if (!this.profile.memory.venuePreferenceWeights) {
+    this.profile.memory.venuePreferenceWeights = {};
+  }
+  if (!this.profile.memory.maxOutcomeHistory) {
+    this.profile.memory.maxOutcomeHistory = 8;
+  }
+  return this.profile.memory;
+};
+
+BRAIN.prototype.getNeedVenueOutcomeMemory = function (needName, venue) {
+  var memory = this.ensureMemoryState();
+  if (!memory.outcomes[needName]) {
+    memory.outcomes[needName] = {};
+  }
+  if (!memory.outcomes[needName][venue]) {
+    memory.outcomes[needName][venue] = { successes: [], failures: [] };
+  }
+  return memory.outcomes[needName][venue];
+};
+
+BRAIN.prototype.getVenuePreferenceWeight = function (needName, venue) {
+  var memory = this.ensureMemoryState();
+  if (!memory.venuePreferenceWeights[needName]) {
+    memory.venuePreferenceWeights[needName] = {};
+  }
+  if (memory.venuePreferenceWeights[needName][venue] === undefined) {
+    memory.venuePreferenceWeights[needName][venue] = 1;
+  }
+  return memory.venuePreferenceWeights[needName][venue];
+};
+
+BRAIN.prototype.adjustVenuePreferenceWeight = function (needName, venue, delta) {
+  var memory = this.ensureMemoryState();
+  var current = this.getVenuePreferenceWeight(needName, venue);
+  memory.venuePreferenceWeights[needName][venue] = Math.max(0.35, Math.min(1.8, current + delta));
+};
+
+BRAIN.prototype.rememberVenueOutcome = function (needName, venue, wasSuccess) {
+  if (!needName || !venue) {
+    return;
+  }
+  var memory = this.ensureMemoryState();
+  var bucket = this.getNeedVenueOutcomeMemory(needName, venue);
+  var tick = this.profile.simTick || 0;
+  if (wasSuccess) {
+    bucket.successes.push(tick);
+    this.adjustVenuePreferenceWeight(needName, venue, 0.08);
+  } else {
+    bucket.failures.push(tick);
+    this.adjustVenuePreferenceWeight(needName, venue, -0.12);
+  }
+  if (bucket.successes.length > memory.maxOutcomeHistory) {
+    bucket.successes.shift();
+  }
+  if (bucket.failures.length > memory.maxOutcomeHistory) {
+    bucket.failures.shift();
+  }
+};
+
+BRAIN.prototype.decayRecentFailurePenalty = function (needName, venue) {
+  var bucket = this.getNeedVenueOutcomeMemory(needName, venue);
+  if (bucket.failures.length === 0) {
+    return 0;
+  }
+  var tick = this.profile.simTick || 0;
+  var penalty = 0;
+  for (var i = 0; i < bucket.failures.length; i++) {
+    var age = Math.max(0, tick - bucket.failures[i]);
+    penalty += 1.15 * Math.exp(-age / 65);
+  }
+  return Math.min(2.8, penalty);
+};
+
+BRAIN.prototype.getVenuePressurePenalty = function (venue, quote) {
+  var economy = this.getEconomy();
+  if (!economy || !economy.getVenueSnapshot) {
+    return 0;
+  }
+  var snapshot = economy.getVenueSnapshot(venue);
+  if (!snapshot) {
+    return 0;
+  }
+  var crowdPenalty = Math.max(0, snapshot.demandPressure || 0) * 0.45;
+  var queuePenalty = 0;
+  if (quote && quote.reason === 'capacity') {
+    queuePenalty = 2;
+  } else if ((snapshot.operationalCapacity || 0) <= 1) {
+    queuePenalty = 0.6;
+  }
+  return crowdPenalty + queuePenalty;
+};
+
+BRAIN.prototype.scoreVenueForNeed = function (needName, venue, quote) {
+  var weight = this.getVenuePreferenceWeight(needName, venue);
+  var memoryBonus = (weight - 1) * 1.5;
+  var failurePenalty = this.decayRecentFailurePenalty(needName, venue);
+  var pressurePenalty = this.getVenuePressurePenalty(venue, quote);
+  var costPenalty = quote && quote.price ? (quote.price * 0.02) : 0;
+  if (quote && !quote.ok) {
+    return -999;
+  }
+  return 10 + memoryBonus - failurePenalty - pressurePenalty - costPenalty;
+};
+
+BRAIN.prototype.composeMemoryRouteMessage = function (needName, chosenVenue, skippedVenue) {
+  if (!chosenVenue || !skippedVenue || chosenVenue === skippedVenue) {
+    return '';
+  }
+  var skippedBucket = this.getNeedVenueOutcomeMemory(needName, skippedVenue);
+  if (!skippedBucket.failures.length) {
+    return '';
+  }
+  var lastFailureTick = skippedBucket.failures[skippedBucket.failures.length - 1];
+  var age = (this.profile.simTick || 0) - lastFailureTick;
+  if (age > 90) {
+    return '';
+  }
+  return this.toTitleCase(skippedVenue) + ' was crowded earlier, trying ' + chosenVenue;
+};
+
+BRAIN.prototype.resolveVenueForNeed = function (needName) {
+  var excludedVenues = arguments.length > 1 && arguments[1] ? arguments[1] : {};
+  var need = this.findNeedByName(needName);
+  if (!need || !need.acts || need.acts.length === 0) {
+    return null;
+  }
+
+  var city = this.getCity();
+  var economy = this.getEconomy();
+
+  var primary = need.acts[0].toLowerCase();
+  var candidates = [];
+  var seen = {};
+
+  for (var i = 0; i < need.acts.length; i++) {
+    var venue = need.acts[i].toLowerCase();
+    if (excludedVenues[venue] || seen[venue]) {
+      continue;
+    }
+    seen[venue] = true;
+    var quote = economy ? economy.requestService({ type: 'FULFILL_NEED', door: venue, need: needName }, this.profile) : { ok: true };
+    if (city && !city.isVenueOperational(venue)) {
+      continue;
+    }
+    if (quote && quote.ok) {
+      candidates.push({
+        venue: venue,
+        quote: quote,
+        rerouted: venue !== primary,
+        score: this.scoreVenueForNeed(needName, venue, quote)
+      });
+    }
+  }
+
+  if (city && city.getVenueAlternatives) {
+    var alternatives = city.getVenueAlternatives(primary, needName);
+    for (var j = 0; j < alternatives.length; j++) {
+      var alternative = alternatives[j];
+      if (excludedVenues[alternative] || seen[alternative]) {
+        continue;
+      }
+      seen[alternative] = true;
+      var altQuote = economy ? economy.requestService({ type: 'FULFILL_NEED', door: alternative, need: needName }, this.profile) : { ok: true };
+      if (altQuote && altQuote.ok) {
+        candidates.push({
+          venue: alternative,
+          quote: altQuote,
+          rerouted: true,
+          score: this.scoreVenueForNeed(needName, alternative, altQuote)
+        });
+      }
+    }
+  }
+
+  if (!candidates.length) {
+    return null;
+  }
+  candidates.sort(function (a, b) {
+    return b.score - a.score;
+  });
+  var chosen = candidates[0];
+  chosen.memoryMessage = this.composeMemoryRouteMessage(needName, chosen.venue, primary);
+  return chosen;
+};
+
+BRAIN.prototype.applyUnmetNeedPressure = function (needName, amount) {
+  var need = this.findNeedByName(needName);
+  if (need) {
+    need.value = this.clampNeedValue(need.value + (amount || 3));
+  }
+  var economy = this.getEconomy();
+  if (economy && economy.registerUnmetNeed) {
+    economy.registerUnmetNeed(needName, 0.35);
+  }
+};
+
+
 BRAIN.prototype.attachServiceQuote = function (intent) {
   if (!intent) {
     return intent;
@@ -845,6 +1121,168 @@ BRAIN.prototype.findNeedByName = function (name) {
     }
   }
   return null;
+};
+
+BRAIN.prototype.toTitleCase = function (value) {
+  if (!value) {
+    return 'venue';
+  }
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+BRAIN.prototype.queueDeferredIntent = function (intent) {
+  this.profile.deferredIntent = intent || null;
+};
+
+BRAIN.prototype.consumeDeferredIntent = function () {
+  var deferred = this.profile.deferredIntent || null;
+  this.profile.deferredIntent = null;
+  return deferred;
+};
+
+BRAIN.prototype.applyFailureState = function (needName, pressure, emotion) {
+  if (!needName) {
+    return;
+  }
+  var need = this.findNeedByName(needName);
+  if (!need) {
+    return;
+  }
+  var amount = pressure || 2;
+  need.value = this.clampNeedValue(need.value + amount);
+  if (emotion) {
+    need.emotion = emotion;
+  }
+  this.applyUnmetNeedPressure(needName, amount * 0.15);
+};
+
+BRAIN.prototype.mapServiceStatus = function (intent, quote) {
+  if (!intent || intent.type === 'REST') {
+    return 'SUCCESS';
+  }
+  if (!quote) {
+    return 'DEFER';
+  }
+  if (quote.ok) {
+    if (intent.type === 'FULFILL_NEED' && this.profile.wallet < quote.price) {
+      return 'TOO_EXPENSIVE';
+    }
+    return 'SUCCESS';
+  }
+  if (quote.reason === 'capacity') {
+    return 'QUEUE';
+  }
+  if (quote.reason === 'stock') {
+    return 'OUT_OF_STOCK';
+  }
+  if (quote.reason === 'closed' || quote.reason === 'no_venue') {
+    return 'CLOSED';
+  }
+  return 'DEFER';
+};
+
+BRAIN.prototype.requestServiceStatus = function (intent) {
+  var economy = this.getEconomy();
+  if (!intent || intent.type === 'REST') {
+    return { status: 'SUCCESS', quote: { ok: true, reason: 'rested', price: 0 } };
+  }
+  if (!economy) {
+    return { status: 'SUCCESS', quote: { ok: true, reason: 'legacy', price: this.getNeedCost(intent.need) } };
+  }
+  var quote = economy.requestService(intent, this.profile);
+  intent.quote = quote;
+  return {
+    status: this.mapServiceStatus(intent, quote),
+    quote: quote
+  };
+};
+
+BRAIN.prototype.makeWorkIntentFromFailure = function (reasonText) {
+  var workIntent = this.buildIntent('WORK', this.profile.workplace, this.game.world.centerX, 'Need to earn first', 'MONEY');
+  workIntent.message = reasonText + ', taking a work shift';
+  return this.attachServiceQuote(workIntent);
+};
+
+BRAIN.prototype.makeNeedIntentFromRoute = function (needName, route, reasonText) {
+  var need = this.findNeedByName(needName);
+  var emotion = need ? need.emotion : 'Trying a different spot';
+  var intent = this.buildIntent('FULFILL_NEED', route.venue, this.game.world.centerX, emotion, needName);
+  intent.quote = route.quote;
+  intent.rerouted = true;
+  intent.message = reasonText + ', trying ' + route.venue;
+  return intent;
+};
+
+BRAIN.prototype.handleArrival = function (intent) {
+  if (!intent) {
+    return { nextIntent: this.chooseIntent(), waitMs: Phaser.Timer.SECOND * 4 };
+  }
+
+  var service = this.requestServiceStatus(intent);
+  var venueName = this.toTitleCase(intent.door);
+  var status = service.status;
+
+  if (status === 'SUCCESS') {
+    this.resolveIntent(intent);
+    return {
+      status: status,
+      waitMs: Phaser.Timer.SECOND * 4,
+      nextIntent: this.chooseIntent(),
+      bubbleMessage: intent.message
+    };
+  }
+
+  if (status === 'QUEUE') {
+    this.rememberVenueOutcome(intent.need, intent.door, false);
+    this.applyFailureState(intent.need, 1.5, 'Queue is long and patience is thinning');
+    var queueIntent = {
+      type: intent.type,
+      door: intent.door,
+      goal: intent.goal,
+      need: intent.need,
+      message: venueName + ' line is packed, waiting in queue',
+      queued: true
+    };
+    this.queueDeferredIntent(queueIntent);
+    return { status: status, waitMs: Phaser.Timer.SECOND * 6, bubbleMessage: queueIntent.message };
+  }
+
+  if ((status === 'CLOSED' || status === 'OUT_OF_STOCK') && intent.need) {
+    this.rememberVenueOutcome(intent.need, intent.door, false);
+    this.applyFailureState(intent.need, 2.5, 'Need is still unresolved after a failed stop');
+    var excluded = {};
+    if (intent.door) {
+      excluded[intent.door] = true;
+    }
+    var route = this.resolveVenueForNeed(intent.need, excluded);
+    var reasonMessage = status === 'CLOSED' ? venueName + ' closed' : venueName + ' out of stock';
+    if (route) {
+      var rerouteIntent = this.makeNeedIntentFromRoute(intent.need, route, reasonMessage);
+      this.queueDeferredIntent(rerouteIntent);
+      return { status: status, waitMs: Phaser.Timer.SECOND * 3, bubbleMessage: rerouteIntent.message };
+    }
+    var deferIntent = this.buildIntent('REST', null, this.profile.homeX, 'No alternatives, deferring for now', intent.need);
+    deferIntent.message = reasonMessage + ', deferring until later';
+    this.queueDeferredIntent(deferIntent);
+    return { status: 'DEFER', waitMs: Phaser.Timer.SECOND * 5, bubbleMessage: deferIntent.message };
+  }
+
+  if (status === 'TOO_EXPENSIVE') {
+    this.rememberVenueOutcome(intent.need, intent.door, false);
+    if (intent.need) {
+      this.applyFailureState(intent.need, 3, 'Prices spiked and the need remains urgent');
+    }
+    var workIntent = this.makeWorkIntentFromFailure(venueName + ' is too expensive');
+    this.queueDeferredIntent(workIntent);
+    return { status: status, waitMs: Phaser.Timer.SECOND * 2, bubbleMessage: workIntent.message };
+  }
+
+  if (intent.need) {
+    this.rememberVenueOutcome(intent.need, intent.door, false);
+    this.applyFailureState(intent.need, 2, 'Could not get service, holding the plan');
+  }
+  this.queueDeferredIntent(intent);
+  return { status: 'DEFER', waitMs: Phaser.Timer.SECOND * 5, bubbleMessage: 'Service failed, trying again soon' };
 };
 
 BRAIN.prototype.buildIntent = function (type, doorKey, fallbackX, emotion, needName) {
@@ -942,30 +1380,141 @@ BRAIN.prototype.describeIntent = function (type, data) {
   return data && data.emotion ? data.emotion : 'On the move';
 };
 
+BRAIN.prototype.initializeNeedRuntimeData = function () {
+  for (var i = 0; i < this.thoughts.needs.length; i++) {
+    var tierName = this.getTierName(i);
+    var tierNeeds = this.thoughts.needs[i].maslow;
+    for (var j = 0; j < tierNeeds.length; j++) {
+      tierNeeds[j].tier = tierName;
+      tierNeeds[j].lastServedVenue = null;
+      tierNeeds[j].lastServedTick = -99999;
+    }
+  }
+};
+
+BRAIN.prototype.decayMemory = function () {
+  var memory = this.ensureMemoryState();
+  var revertRate = 0.004;
+  var pruneAfterTicks = 240;
+  var tick = this.profile.simTick || 0;
+  var needKeys = Object.keys(memory.venuePreferenceWeights);
+  for (var i = 0; i < needKeys.length; i++) {
+    var needName = needKeys[i];
+    var venueWeights = memory.venuePreferenceWeights[needName];
+    var venues = Object.keys(venueWeights);
+    for (var j = 0; j < venues.length; j++) {
+      var venue = venues[j];
+      var current = venueWeights[venue];
+      venueWeights[venue] = current + (1 - current) * revertRate;
+    }
+  }
+
+  var outcomeNeeds = Object.keys(memory.outcomes);
+  for (var n = 0; n < outcomeNeeds.length; n++) {
+    var outcomeNeed = outcomeNeeds[n];
+    var outcomeVenues = Object.keys(memory.outcomes[outcomeNeed]);
+    for (var v = 0; v < outcomeVenues.length; v++) {
+      var key = outcomeVenues[v];
+      var bucket = memory.outcomes[outcomeNeed][key];
+      bucket.successes = bucket.successes.filter(function (t) { return (tick - t) <= pruneAfterTicks; });
+      bucket.failures = bucket.failures.filter(function (t) { return (tick - t) <= pruneAfterTicks; });
+    }
+  }
+};
+
+BRAIN.prototype.getTierName = function (tierIndex) {
+  var order = this.needBalancing.tierOrder;
+  return order[tierIndex] || order[order.length - 1];
+};
+
+BRAIN.prototype.clampNeedValue = function (value) {
+  var clamp = this.needBalancing.clamp;
+  return Math.max(clamp.min, Math.min(clamp.max, value));
+};
+
+BRAIN.prototype.getNeedCurve = function (needName) {
+  var curves = this.needBalancing.needCurves || {};
+  return curves[needName] || this.needBalancing.defaultCurve;
+};
+
+BRAIN.prototype.getTierGateMultiplier = function (tierIndex, lowerTierStable, normalizedDeficit) {
+  var gating = this.needBalancing.gating;
+  if (tierIndex === 0) {
+    return 1;
+  }
+  if (lowerTierStable) {
+    return 1 + gating.stableLowerTierBoost * normalizedDeficit;
+  }
+  return gating.unstableLowerTierMultiplier;
+};
+
+BRAIN.prototype.getNeedCooldownPenalty = function (need) {
+  if (!need) {
+    return 0;
+  }
+  var cooldown = this.needBalancing.cooldown;
+  var history = this.profile.venueHistory || [];
+  if (!need.lastServedVenue || history.length === 0) {
+    return 0;
+  }
+
+  var repeatCount = 0;
+  for (var i = history.length - 1; i >= 0; i--) {
+    if ((this.profile.simTick - history[i].tick) > cooldown.lookbackTicks) {
+      break;
+    }
+    if (history[i].venue === need.lastServedVenue) {
+      repeatCount += 1;
+    }
+  }
+
+  var sinceLastServed = this.profile.simTick - (need.lastServedTick || 0);
+  if (sinceLastServed <= cooldown.graceTicks) {
+    repeatCount += cooldown.recentVisitBonusCount;
+  }
+  return repeatCount * cooldown.penaltyPerRepeat;
+};
+
 BRAIN.prototype.getWeight= function (x,y,i) {
-  return ( (y*(i+1)-y*(i))/(x*(i+1)-x*(i)) - (y*(i)-y*(i-1))/(x*(i)-x*(i-1))/(x*(i+1)-x*(i-1)));
+  var clampedValue = this.clampNeedValue(y);
+  var tierName = this.getTierName(i);
+  var tierUrgency = this.needBalancing.tierUrgency[tierName] || 1;
+  var normalizedDeficit = (this.needBalancing.clamp.max - clampedValue) / this.needBalancing.clamp.max;
+  normalizedDeficit = Math.max(0, Math.min(1, normalizedDeficit));
+  var deficitCurve = Math.pow(normalizedDeficit, this.needBalancing.weightCurve.deficitExponent);
+  return x * tierUrgency * (this.needBalancing.weightCurve.baseline + deficitCurve);
 };
 
 BRAIN.prototype.life = function () {
+  this.profile.simTick += 1;
+  this.decayMemory();
+  var lowerTierStable = true;
   for ( var i = 0; i < this.thoughts.needs.length; i++) {
     var needs = this.thoughts.needs[i];
+    var tierDeficitPeak = 0;
     for(var j = 0; j< needs.maslow.length;j++){
-      needs.maslow[j].value += 0.01;
-      needs.maslow[j].weight = this.getWeight(needs.maslow[j].baseWeight,needs.maslow[j].value,i);
+      var need = needs.maslow[j];
+      var curve = this.getNeedCurve(need.need);
+      need.value = this.clampNeedValue(need.value + curve.decayPerTick - curve.passiveRecoveryPerTick);
+      var normalizedDeficit = (this.needBalancing.clamp.max - need.value) / this.needBalancing.clamp.max;
+      tierDeficitPeak = Math.max(tierDeficitPeak, normalizedDeficit);
+      var gateMultiplier = this.getTierGateMultiplier(i, lowerTierStable, normalizedDeficit);
+      need.weight = this.getWeight(need.baseWeight, need.value, i) * gateMultiplier;
+      need.weight = Math.max(0, need.weight - this.getNeedCooldownPenalty(need));
     }
+    lowerTierStable = lowerTierStable && tierDeficitPeak <= this.needBalancing.gating.lowerTierDeficitThreshold;
   }
   this.profile.fatigue = Math.min(100, this.profile.fatigue + 0.05);
   if (this.profile.wallet < 10) {
     var moneyNeed = this.findNeedByName('MONEY');
     if (moneyNeed) {
-      moneyNeed.value += 0.5;
-      moneyNeed.weight += 0.2;
+      moneyNeed.value = this.clampNeedValue(moneyNeed.value + 0.5);
     }
   }
   if (this.getCurrentHour() > 21 || this.getCurrentHour() < 6) {
     var warmthNeed = this.findNeedByName('WARMTH');
     if (warmthNeed) {
-      warmthNeed.weight += 0.05;
+      warmthNeed.value = this.clampNeedValue(warmthNeed.value - 0.3);
     }
   }
 };
@@ -1046,10 +1595,24 @@ BRAIN.prototype.chooseIntent = function () {
     brokeIntent.message = this.describeIntent('WORK', { need: 'MONEY' });
     return this.attachServiceQuote(brokeIntent);
   }
-  var doorKey = topNeed.acts[0].toLowerCase();
-  var intent = this.buildIntent('FULFILL_NEED', doorKey, this.game.world.centerX, topNeed.emotion, topNeed.need);
-  intent = this.attachServiceQuote(intent);
-  intent.message = this.describeIntent('FULFILL_NEED', { need: topNeed.need, emotion: topNeed.emotion, price: intent.quote && intent.quote.price });
+  var route = this.resolveVenueForNeed(topNeed.need);
+  if (!route) {
+    this.applyUnmetNeedPressure(topNeed.need, 4);
+    var fallbackIntent = this.buildIntent('REST', null, this.profile.homeX, 'No safe venue is open; heading home', topNeed.need);
+    fallbackIntent.message = this.describeIntent('REST') + ' Service outage is making needs worse.';
+    return fallbackIntent;
+  }
+
+  var intent = this.buildIntent('FULFILL_NEED', route.venue, this.game.world.centerX, topNeed.emotion, topNeed.need);
+  intent.quote = route.quote;
+  intent.rerouted = !!route.rerouted;
+  if (route.memoryMessage) {
+    intent.message = route.memoryMessage + '. ' + this.describeIntent('FULFILL_NEED', { need: topNeed.need, emotion: topNeed.emotion, price: intent.quote && intent.quote.price });
+  } else if (intent.rerouted) {
+    intent.message = 'Rerouting to ' + route.venue + ' due to disruption. ' + this.describeIntent('FULFILL_NEED', { need: topNeed.need, emotion: topNeed.emotion, price: intent.quote && intent.quote.price });
+  } else {
+    intent.message = this.describeIntent('FULFILL_NEED', { need: topNeed.need, emotion: topNeed.emotion, price: intent.quote && intent.quote.price });
+  }
   return intent;
 };
 
@@ -1069,18 +1632,36 @@ BRAIN.prototype.resolveIntent = function (intent) {
     }
     var moneyNeed = this.findNeedByName('MONEY');
     if (moneyNeed && (!settlement || settlement.ok)) {
-      moneyNeed.value = 0;
+      moneyNeed.value = this.clampNeedValue(moneyNeed.value - this.getNeedCurve('MONEY').recoveryOnResolve);
+      moneyNeed.emotion = "Wallet's breathing again after that shift";
     }
-    this.profile.fatigue = Math.min(100, this.profile.fatigue + 5);
+    if (!settlement || settlement.ok) {
+      this.profile.fatigue = Math.min(100, this.profile.fatigue + 5);
+    }
   }
 
   if (intent.type === 'FULFILL_NEED' && intent.need) {
     var need = this.findNeedByName(intent.need);
     if (need && (!settlement || settlement.ok)) {
-      need.value = 0;
+      this.rememberVenueOutcome(intent.need, intent.door, true);
+      var recovery = this.getNeedCurve(intent.need).recoveryOnResolve;
+      need.value = this.clampNeedValue(need.value - recovery);
+      need.emotion = "That helped; the pressure eased for now";
       this.profile.fatigue = Math.max(0, this.profile.fatigue - 2);
+      need.lastServedVenue = intent.door || null;
+      need.lastServedTick = this.profile.simTick;
+      this.profile.venueHistory.push({
+        venue: intent.door || 'unknown',
+        tick: this.profile.simTick
+      });
+      if (this.profile.venueHistory.length > this.needBalancing.cooldown.historyLimit) {
+        this.profile.venueHistory.shift();
+      }
     } else if (need && settlement && !settlement.ok) {
-      need.value += 2;
+      this.rememberVenueOutcome(intent.need, intent.door, false);
+      need.value = this.clampNeedValue(need.value + 2);
+      this.applyUnmetNeedPressure(intent.need, 2);
+      need.emotion = "Didn't get served; still chasing relief";
     }
     if (!economy && need) {
       var cost = this.getNeedCost(intent.need);
@@ -1116,7 +1697,7 @@ BRAIN.prototype.update = function() {
 
 module.exports = BRAIN;
 
-},{}],7:[function(require,module,exports){
+},{"../data/brainNeedBalancing.json":6}],8:[function(require,module,exports){
 Car = function (game, x, y, frame, direction) {
   Phaser.Sprite.call(this, game, x, y, frame, 0);
   this.direction = direction;
@@ -1172,25 +1753,14 @@ Car.prototype.update = function () {
 
 
 module.exports = Car;
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 
 CITY = function (game,  x, y) {
   Phaser.Sprite.call(this, game, x, y, '', 0);
   this.game = game;
   this.buildings = this.game.add.group();
   this.game.doors = {};
-  //if (this.game.development === true){
-   this.game.fade = {};
-  //  this.game.back = {};
-   //this.game.fore = {};
-  //}else{
-   // this.game.fade = this.game.add.sprite(this.game.world.centerX - (4267 / 2), this.game.world.height - 2000, 'city_fade');
-
-
-  //}
-
-
-
+  this.game.fade = {};
 
   this.building_data = [
     {"building":1, "ground":37, "floor":25, "top":34, "earth":270, "max_height":40},
@@ -1198,36 +1768,79 @@ CITY = function (game,  x, y) {
     {"building":3, "ground":0, "floor":136, "top":111, "earth":260, "max_height":20},
     {"building":4, "ground":0, "floor":52, "top":166, "earth":295, "max_height":20}
   ];
-  //this.addRandomBuildings();
+
+  this.serviceTypes = {
+    hydration: { venues: ['cafe'], severity: 0, state: 'stable', recoveryTimerMs: 0, rebuildCost: 0, laborRequired: 0 },
+    food: { venues: ['bakery'], severity: 0, state: 'stable', recoveryTimerMs: 0, rebuildCost: 0, laborRequired: 0 },
+    shelter: { venues: ['library'], severity: 0, state: 'stable', recoveryTimerMs: 0, rebuildCost: 0, laborRequired: 0 },
+    finance: { venues: ['bank'], severity: 0, state: 'stable', recoveryTimerMs: 0, rebuildCost: 0, laborRequired: 0 },
+    culture: { venues: ['bookstore', 'library'], severity: 0, state: 'stable', recoveryTimerMs: 0, rebuildCost: 0, laborRequired: 0 }
+  };
+  this.venueServiceTypeMap = {
+    cafe: 'hydration',
+    bakery: 'food',
+    library: 'shelter',
+    bank: 'finance',
+    bookstore: 'culture'
+  };
+
+  this.damageStates = {
+    destroyed: { capacityMultiplier: 0, inventoryMultiplier: 0, durationMs: 90000, costMultiplier: 1.4, laborMultiplier: 1.8 },
+    degraded: { capacityMultiplier: 0.45, inventoryMultiplier: 0.5, durationMs: 55000, costMultiplier: 1.0, laborMultiplier: 1.2 },
+    recovering: { capacityMultiplier: 0.75, inventoryMultiplier: 0.8, durationMs: 35000, costMultiplier: 0.6, laborMultiplier: 0.6 },
+    stable: { capacityMultiplier: 1, inventoryMultiplier: 1, durationMs: 0, costMultiplier: 0, laborMultiplier: 0 }
+  };
+
+  this.damageModel = {
+    instability: 0,
+    instabilityDecayPerSecond: 0.035,
+    lastUpdateAt: this.game.time.now,
+    venueStatus: {},
+    debugLines: []
+  };
+
   this.addOrderedBuildings();
   this.addBank();
   this.addLibrary();
   this.addBakery();
   this.addCafe();
   this.addBookstore();
-
-  //console.log(this.buildings);
   this.addBuildingsToGame();
 
-
+  this.initializeDamageModel();
 };
 
 CITY.prototype = Object.create(Phaser.Sprite.prototype);
 CITY.prototype.constructor = CITY;
 
-CITY.prototype.shuffleGroupChildren = function (array) {
-
-    for (var i = array.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var temp = array[i];
-      array[i] = array[j];
-      array[j] = temp;
-    }
-
-
-    return array;
-
+CITY.prototype.initializeDamageModel = function () {
+  var venues = ['bank', 'bakery', 'cafe', 'library', 'bookstore'];
+  for (var i = 0; i < venues.length; i++) {
+    this.damageModel.venueStatus[venues[i]] = {
+      venue: venues[i],
+      state: 'stable',
+      severity: 0,
+      recoveryTimerMs: 0,
+      rebuildCost: 0,
+      laborRequired: 0,
+      unavailable: false,
+      capacityModifier: 1,
+      inventoryModifier: 1,
+      source: null
+    };
+  }
 };
+
+CITY.prototype.shuffleGroupChildren = function (array) {
+  for (var i = array.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var temp = array[i];
+    array[i] = array[j];
+    array[j] = temp;
+  }
+  return array;
+};
+
 CITY.prototype.addBuildingsToGame = function () {
   var counter = 0;
   var startX = 200;
@@ -1236,147 +1849,381 @@ CITY.prototype.addBuildingsToGame = function () {
   var building_data = this.building_data;
   this.buildings.children = this.shuffleGroupChildren(this.buildings.children);
 
-  for(var bcount = 0;bcount<this.buildings.children.length;bcount++){
+  for (var bcount = 0; bcount < this.buildings.children.length; bcount++) {
     var sprite = this.buildings.children[bcount];
     var type = sprite instanceof Phaser.Group;
 
-    if(type === false){
+    if (type === false) {
       sprite.exists = true;
       sprite.x = startX;
-      this.game.doors[sprite.key] = this.game.add.sprite(sprite.centerX, sprite.y+sprite.height-40, 'door');
-      this.game.doors[sprite.key].anchor.setTo(0.5,0.5);
+      this.game.doors[sprite.key] = this.game.add.sprite(sprite.centerX, sprite.y + sprite.height - 40, 'door');
+      this.game.doors[sprite.key].anchor.setTo(0.5, 0.5);
 
-      //var building = sprite.game.add.existing(sprite);
       buildingWidth = sprite.width;
       counter += 1;
-    }else{
+    } else {
 
-      var nextY = sprite.game.world.height-270;
+      var nextY = sprite.game.world.height - 270;
       var heightCount = 0;
 
-      for(var gcount = 0;gcount<sprite.children.length;gcount++){
+      for (var gcount = 0; gcount < sprite.children.length; gcount++) {
         var deepSprite = sprite.children[gcount];
 
-        var data = deepSprite.key.split("_");
+        var data = deepSprite.key.split('_');
         var level = data[0];
         var level_data;
         var building_num = data[1];
         deepSprite.exists = true;
         deepSprite.x = startX;
 
+        for (var i = 0; i < building_data.length; i++) {
+          var building_level = building_data[i];
 
-          for(var i=0;i<building_data.length;i++){
-            var building_level = building_data[i];
+          if (building_level.building === parseInt(building_num)) {
+            level_data = building_level;
+            break;
 
-            if(building_level.building === parseInt(building_num)){
-              level_data = building_level;
-              break;
-
-            }
           }
+        }
 
-        switch(level){
-          case "ground":
+        switch (level) {
+          case 'ground':
             nextY = sprite.game.world.height - (level_data.earth + level_data.ground);
             break;
-          case "floor":
+          case 'floor':
             nextY = (sprite.game.world.height - (level_data.earth + level_data.ground + (level_data.floor * heightCount)));
             break;
-          case "top":
-            nextY = (sprite.game.world.height - (level_data.earth + level_data.ground + (level_data.floor * (heightCount-1)))-(level_data.top));
+          case 'top':
+            nextY = (sprite.game.world.height - (level_data.earth + level_data.ground + (level_data.floor * (heightCount - 1))) - (level_data.top));
             break;
         }
 
         deepSprite.y = nextY;
 
         buildingWidth = deepSprite.width;
-        counter+=1;
-        heightCount+=1;
+        counter += 1;
+        heightCount += 1;
       }
-
-
     }
 
-    startX = startX + buildingWidth+sprite.game.rnd.integerInRange(0, 15);
+    startX = startX + buildingWidth + sprite.game.rnd.integerInRange(0, 15);
   }
 };
 
-
-CITY.prototype.addLibrary = function() {
-  this.buildings.create(0, this.game.world.height - 440, "library", 0,false);
+CITY.prototype.addLibrary = function () {
+  this.buildings.create(0, this.game.world.height - 440, 'library', 0, false);
 };
-CITY.prototype.addBakery = function(){
-  this.buildings.create(0, this.game.world.height - 495, "bakery", 0,false);
-
-};
-CITY.prototype.addCafe = function(){
-  this.buildings.create(0, this.game.world.height - 495, "cafe", 0,false);
+CITY.prototype.addBakery = function () {
+  this.buildings.create(0, this.game.world.height - 495, 'bakery', 0, false);
 
 };
-CITY.prototype.addBookstore = function(){
-  this.buildings.create(0, this.game.world.height - 495, "bookstore", 0,false);
+CITY.prototype.addCafe = function () {
+  this.buildings.create(0, this.game.world.height - 495, 'cafe', 0, false);
+
+};
+CITY.prototype.addBookstore = function () {
+  this.buildings.create(0, this.game.world.height - 495, 'bookstore', 0, false);
 
 };
 
-CITY.prototype.addBank = function() {
-  this.buildings.create(0, this.game.world.height - 488, "bank", 0,false);
+CITY.prototype.addBank = function () {
+  this.buildings.create(0, this.game.world.height - 488, 'bank', 0, false);
 };
 
-CITY.prototype.addRandomBuildings = function() {
+CITY.prototype.addRandomBuildings = function () {
   for (var i = 0; i < this.game.rnd.integerInRange(10, 100); i++) {
     var building = this.building_data[this.game.rnd.integerInRange(0, this.building_data.length - 1)];
-    var created_building = this.createBuilding(
-      ["ground_" + building.building, building.ground],
-      ["floor_" + building.building, building.floor],
-      ["top_" + building.building, building.top],
+    this.createBuilding(
+      ['ground_' + building.building, building.ground],
+      ['floor_' + building.building, building.floor],
+      ['top_' + building.building, building.top],
       building.earth, building.max_height);
   }
 };
 
-CITY.prototype.addOrderedBuildings = function() {
-  var modifier = 15;
+CITY.prototype.addOrderedBuildings = function () {
   for (var i = 0; i < this.building_data.length; i++) {
-
     var building = this.building_data[i];
 
     var building_added = this.createBuilding(
-      ["ground_" + building.building, building.ground],
-      ["floor_" + building.building, building.floor],
-      ["top_" + building.building, building.top], building.max_height);
-    //console.log(building_added);
+      ['ground_' + building.building, building.ground],
+      ['floor_' + building.building, building.floor],
+      ['top_' + building.building, building.top], building.max_height);
     this.buildings.add(building_added);
   }
 };
 
-
-
-
-
-
-
-CITY.prototype.createBuilding = function(ground, floor, top, max_height) {
-
+CITY.prototype.createBuilding = function (ground, floor, top, max_height) {
   var height = this.game.rnd.integerInRange(10, max_height);
-
   var floored_building = this.game.add.group();
 
-  floored_building.create(0, 0, ground[0], 0,false);
+  floored_building.create(0, 0, ground[0], 0, false);
 
-  for (var i = 0; i <height; i++) {
-
-    floored_building.create(0, 0, floor[0], 0,false);
+  for (var i = 0; i < height; i++) {
+    floored_building.create(0, 0, floor[0], 0, false);
   }
 
-  floored_building.create(0, 0, top[0], 0,false);
+  floored_building.create(0, 0, top[0], 0, false);
 
   return floored_building;
 };
 
+CITY.prototype.getRecoveryProfile = function (state, severity) {
+  var template = this.damageStates[state] || this.damageStates.degraded;
+  var normalizedSeverity = Math.max(0.1, Math.min(1, severity || 0.5));
+  return {
+    state: state,
+    capacityModifier: template.capacityMultiplier,
+    inventoryModifier: template.inventoryMultiplier,
+    recoveryTimerMs: Math.ceil(template.durationMs * (0.7 + normalizedSeverity)),
+    rebuildCost: Math.ceil((140 + normalizedSeverity * 420) * template.costMultiplier),
+    laborRequired: Math.ceil((35 + normalizedSeverity * 130) * template.laborMultiplier)
+  };
+};
 
-CITY.prototype.animateDamage = function() {
+CITY.prototype.markVenueDamage = function (venue, state, options) {
+  var venueState = this.damageModel.venueStatus[venue];
+  if (!venueState) {
+    return null;
+  }
+
+  var damageState = this.damageStates[state] ? state : 'degraded';
+  var severity = options && options.severity !== undefined ? options.severity : 0.5;
+  var profile = this.getRecoveryProfile(damageState, severity);
+
+  venueState.state = damageState;
+  venueState.severity = severity;
+  venueState.recoveryTimerMs = profile.recoveryTimerMs;
+  venueState.rebuildCost = profile.rebuildCost;
+  venueState.laborRequired = profile.laborRequired;
+  venueState.unavailable = damageState === 'destroyed';
+  venueState.capacityModifier = profile.capacityModifier;
+  venueState.inventoryModifier = profile.inventoryModifier;
+  venueState.source = options && options.source ? options.source : 'incident';
+
+  this.damageModel.instability = Math.min(1.5, this.damageModel.instability + (0.2 + severity * 0.55));
+
+  return venueState;
+};
+
+CITY.prototype.markServiceDamage = function (serviceType, state, options) {
+  var service = this.serviceTypes[serviceType];
+  if (!service) {
+    return;
+  }
+  service.state = state;
+  service.severity = Math.max(service.severity || 0, options && options.severity !== undefined ? options.severity : 0.5);
+
+  for (var i = 0; i < service.venues.length; i++) {
+    this.markVenueDamage(service.venues[i], state, options);
+  }
+};
+
+CITY.prototype.markVenueUnavailable = function (venue, source) {
+  return this.markVenueDamage(venue, 'destroyed', { severity: 0.85, source: source || 'battle' });
+};
+
+CITY.prototype.markVenueReducedCapacity = function (venue, severity, source) {
+  return this.markVenueDamage(venue, 'degraded', { severity: severity || 0.45, source: source || 'catastrophe' });
+};
+
+CITY.prototype.triggerCatastrophe = function (options) {
+  var intensity = options && options.intensity !== undefined ? options.intensity : this.game.rnd.frac();
+  var allVenues = Object.keys(this.damageModel.venueStatus);
+  var hitCount = Math.max(1, Math.min(allVenues.length, Math.ceil(1 + intensity * 3)));
+  var impacted = [];
+
+  for (var i = 0; i < hitCount; i++) {
+    var venue = allVenues[this.game.rnd.integerInRange(0, allVenues.length - 1)];
+    if (impacted.indexOf(venue) !== -1) {
+      continue;
+    }
+    impacted.push(venue);
+    if (this.game.rnd.frac() < 0.35 + intensity * 0.4) {
+      this.markVenueUnavailable(venue, 'catastrophe');
+    } else {
+      this.markVenueReducedCapacity(venue, 0.35 + intensity * 0.55, 'catastrophe');
+    }
+  }
+
+  this.damageModel.instability = Math.min(1.8, this.damageModel.instability + 0.25 + intensity * 0.8);
+};
+
+CITY.prototype.getVenueStatus = function (venue) {
+  return this.damageModel.venueStatus[venue] || null;
+};
+
+CITY.prototype.isVenueOperational = function (venue) {
+  var status = this.getVenueStatus(venue);
+  return !status || status.state !== 'destroyed';
+};
+
+CITY.prototype.getVenueAlternatives = function (venue, needName) {
+  var economy = this.game && this.game.economy;
+  var serviceType = this.venueServiceTypeMap[venue] || null;
+
+  if (!serviceType && economy && economy.needVenueMap && needName) {
+    serviceType = this.venueServiceTypeMap[economy.needVenueMap[needName]];
+  }
+
+  if (!serviceType || !this.serviceTypes[serviceType]) {
+    return [];
+  }
+
+  var possibilities = this.serviceTypes[serviceType].venues;
+  var alternatives = [];
+
+  for (var i = 0; i < possibilities.length; i++) {
+    var candidate = possibilities[i];
+    if (candidate === venue) {
+      continue;
+    }
+    var damage = this.getVenueStatus(candidate);
+    if (damage && damage.state === 'destroyed') {
+      continue;
+    }
+    if (economy && economy.isVenueClosedForDisruption && economy.isVenueClosedForDisruption(candidate)) {
+      continue;
+    }
+    alternatives.push(candidate);
+  }
+
+  return alternatives;
+};
+
+CITY.prototype.advanceVenueRecovery = function (venueState, deltaMs) {
+  if (venueState.state === 'stable') {
+    return;
+  }
+
+  venueState.recoveryTimerMs = Math.max(0, venueState.recoveryTimerMs - deltaMs);
+  if (venueState.recoveryTimerMs > 0) {
+    return;
+  }
+
+  if (venueState.state === 'destroyed') {
+    var recovering = this.getRecoveryProfile('recovering', venueState.severity || 0.5);
+    venueState.state = 'recovering';
+    venueState.unavailable = false;
+    venueState.capacityModifier = recovering.capacityModifier;
+    venueState.inventoryModifier = recovering.inventoryModifier;
+    venueState.recoveryTimerMs = recovering.recoveryTimerMs;
+    venueState.rebuildCost = Math.ceil(venueState.rebuildCost * 0.55);
+    venueState.laborRequired = Math.ceil(venueState.laborRequired * 0.5);
+    return;
+  }
+
+  if (venueState.state === 'degraded') {
+    var recoveringProfile = this.getRecoveryProfile('recovering', venueState.severity || 0.45);
+    venueState.state = 'recovering';
+    venueState.capacityModifier = recoveringProfile.capacityModifier;
+    venueState.inventoryModifier = recoveringProfile.inventoryModifier;
+    venueState.recoveryTimerMs = recoveringProfile.recoveryTimerMs;
+    venueState.rebuildCost = Math.ceil(venueState.rebuildCost * 0.45);
+    venueState.laborRequired = Math.ceil(venueState.laborRequired * 0.55);
+    return;
+  }
+
+  venueState.state = 'stable';
+  venueState.severity = 0;
+  venueState.rebuildCost = 0;
+  venueState.laborRequired = 0;
+  venueState.unavailable = false;
+  venueState.capacityModifier = 1;
+  venueState.inventoryModifier = 1;
+  venueState.recoveryTimerMs = 0;
+};
+
+CITY.prototype.applyRecoveryEconomics = function (venueState, deltaMs) {
+  var economy = this.game && this.game.economy;
+  if (!economy || venueState.state === 'stable') {
+    return;
+  }
+  var venue = economy.venues[venueState.venue];
+  if (!venue) {
+    return;
+  }
+
+  var repairBudgetPerSecond = Math.max(2, Math.floor(Math.max(0, venue.balance + 80) * 0.04));
+  var laborBudgetPerSecond = Math.max(1, Math.floor(venue.staffCount * venue.wage * 0.08));
+
+  var dtSeconds = Math.max(0.016, deltaMs / 1000);
+  var repairSpend = Math.min(venueState.rebuildCost, Math.ceil(repairBudgetPerSecond * dtSeconds));
+  var laborSpend = Math.min(venueState.laborRequired, Math.ceil(laborBudgetPerSecond * dtSeconds));
+
+  venueState.rebuildCost = Math.max(0, venueState.rebuildCost - repairSpend);
+  venueState.laborRequired = Math.max(0, venueState.laborRequired - laborSpend);
+
+  if (repairSpend > 0) {
+    venue.balance = Math.max(-450, venue.balance - repairSpend);
+  }
+  if (laborSpend > 0) {
+    venue.balance = Math.max(-450, venue.balance - Math.ceil(laborSpend * 0.25));
+  }
+
+  if (venueState.rebuildCost === 0 && venueState.laborRequired === 0) {
+    venueState.recoveryTimerMs = Math.min(venueState.recoveryTimerMs, Math.ceil(2200 + (1 - Math.max(0, venue.balance) / 900) * 3000));
+  }
+};
+
+CITY.prototype.pushDisruptionToEconomy = function () {
+  var economy = this.game && this.game.economy;
+  if (!economy || !economy.applyDisruptionSnapshot) {
+    return;
+  }
+  economy.applyDisruptionSnapshot(this.damageModel.venueStatus, this.damageModel.instability);
+};
+
+CITY.prototype.updateDebugLines = function () {
+  var keys = Object.keys(this.damageModel.venueStatus);
+  var lines = ['CITY INSTABILITY ' + this.damageModel.instability.toFixed(2)];
+
+  for (var i = 0; i < keys.length; i++) {
+    var status = this.damageModel.venueStatus[keys[i]];
+    var timerSeconds = Math.ceil((status.recoveryTimerMs || 0) / 1000);
+    lines.push(
+      status.venue.toUpperCase() + ': ' + status.state +
+      ' cap x' + status.capacityModifier.toFixed(2) +
+      ' t-' + timerSeconds + 's' +
+      (status.rebuildCost > 0 ? ' $' + status.rebuildCost : '') +
+      (status.laborRequired > 0 ? ' L' + status.laborRequired : '')
+    );
+  }
+
+  this.damageModel.debugLines = lines;
+};
+
+CITY.prototype.getDebugDamageLines = function () {
+  return this.damageModel.debugLines || [];
+};
+
+CITY.prototype.animateDamage = function () {
 
 };
-CITY.prototype.update = function() {
+
+CITY.prototype.updateDamageModel = function (deltaMs) {
+  var dt = deltaMs || Math.max(16, this.game.time.now - this.damageModel.lastUpdateAt);
+  this.damageModel.lastUpdateAt = this.game.time.now;
+
+  if (this.game.rnd.frac() < (0.00002 + Math.max(0, this.damageModel.instability) * 0.0003)) {
+    this.triggerCatastrophe({ intensity: Math.min(1, 0.25 + this.damageModel.instability) });
+  }
+
+  var keys = Object.keys(this.damageModel.venueStatus);
+  for (var i = 0; i < keys.length; i++) {
+    var venueState = this.damageModel.venueStatus[keys[i]];
+    this.applyRecoveryEconomics(venueState, dt);
+    this.advanceVenueRecovery(venueState, dt);
+  }
+
+  this.damageModel.instability = Math.max(0, this.damageModel.instability - this.damageModel.instabilityDecayPerSecond * (dt / 1000));
+
+  this.pushDisruptionToEconomy();
+  this.updateDebugLines();
+};
+
+CITY.prototype.update = function () {
+  var deltaMs = this.game.time.elapsedMS || 16;
 
   this.game.back.x -= this.game.player.body.velocity.x * (0.001);
   this.game.fade.x -= this.game.player.body.velocity.x * (0.0005);
@@ -1384,10 +2231,12 @@ CITY.prototype.update = function() {
   this.game.back.y -= this.game.player.body.velocity.y * (0.001);
   this.game.fade.y -= this.game.player.body.velocity.y * (0.0005);
 
+  this.updateDamageModel(deltaMs);
 };
 
 module.exports = CITY;
-},{}],9:[function(require,module,exports){
+
+},{}],10:[function(require,module,exports){
 DayCycle = function (game, dayLength) {
   this.game = game;
   this.dayLength = dayLength;
@@ -1473,7 +2322,7 @@ DayCycle.prototype.tweenTint = function (spriteToTween, startColor, endColor, du
 
 
 module.exports = DayCycle;
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 Hero = function (game, x, y, frame) {
     Phaser.Sprite.call(this, game, x, y, 'hero', frame);
 
@@ -1894,7 +2743,7 @@ Hero.prototype.render = function () {
 
 
 module.exports = Hero;
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 
 HUD = function (game,  x, y) {
   // the bar itself
@@ -1938,6 +2787,11 @@ HUD = function (game,  x, y) {
   // just a property we can tween so the bar has a progress to show
   this.barProgress = 128;
 
+  this.cityDebugText = this.game.add.bitmapText(0, 0, 'smallfont', '', 14);
+  this.cityDebugText.fixedToCamera = true;
+  this.cityDebugText.cameraOffset.setTo(18, 140);
+  this.cityDebugText.maxWidth = 420;
+  this.cityDebugText.align = 'left';
 
 };
 
@@ -2001,11 +2855,17 @@ HUD.prototype.update = function() {
 
   // important - without this line, the context will never be updated on the GPU when using webGL
   this.bar.dirty = true;
+
+  if (this.game.city && this.game.city.getDebugDamageLines) {
+    var damageLines = this.game.city.getDebugDamageLines();
+    this.cityDebugText.text = damageLines.join('\n');
+  }
+
   this.animateDamage();
 };
 
 module.exports = HUD;
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var Brain = require('./Brain');
 
 Pedestrian = function (game, y, sprite) {
@@ -2090,9 +2950,9 @@ Pedestrian.prototype.spriteMessage = function () {
     }
     message = this.distractionLine;
   } else if (this.isMoving) {
-    message = this.currentIntent && this.currentIntent.message ? this.currentIntent.message : this.ai.thoughts.needs[0].maslow[0].emotion;
+    message = this.sprite_message || (this.currentIntent && this.currentIntent.message ? this.currentIntent.message : this.ai.thoughts.needs[0].maslow[0].emotion);
   } else {
-    message = "Thinking...";
+    message = this.sprite_message || "Thinking...";
   }
 
   var walletText = " ($" + this.ai.profile.wallet + ")";
@@ -2184,16 +3044,53 @@ Pedestrian.prototype.updateDistractionState = function () {
   }
 };
 Pedestrian.prototype.removePedestrian = function (next, sprite) {
-  sprite.visible = false;
-  sprite.ai.resolveIntent(sprite.currentIntent);
-  var timer = sprite.game.time.events.add(Phaser.Timer.SECOND*4, next, sprite);
+  var arrival = sprite.ai.handleArrival(sprite.currentIntent);
+  if (arrival && arrival.bubbleMessage) {
+    sprite.sprite_message = arrival.bubbleMessage;
+  }
+
+  if (sprite.move_tween && sprite.move_tween.isRunning) {
+    sprite.move_tween.stop();
+  }
+  sprite.animations.stop();
+  sprite.isMoving = false;
+
+  if (sprite.messageContainer) {
+    sprite.messageContainer.destroy();
+    sprite.messageContainer = null;
+    sprite.messageText = null;
+    sprite.messageBubble = null;
+  }
+
+  sprite.kill();
+
+  var waitMs = arrival && arrival.waitMs ? arrival.waitMs : Phaser.Timer.SECOND * 4;
+  sprite.game.time.events.add(waitMs, next, sprite);
 
 };
 
 Pedestrian.prototype.putBack = function () {
-  this.visible = true;
-  this.currentIntent = this.ai.chooseIntent();
+  var spawnPadding = 200;
+  this.revive();
+
+  this.currentIntent = this.ai.consumeDeferredIntent() || this.ai.chooseIntent();
   this.goal = this.currentIntent.goal;
+  this.lastMessage = null;
+  this.isDistracted = false;
+  this.distractionLine = null;
+
+  this.x = (this.goal < this.game.world.centerX) ?
+    this.game.world.width + this.game.rnd.integerInRange(0, spawnPadding) :
+    this.game.world.x - this.game.rnd.integerInRange(0, spawnPadding);
+
+  this.y = this.game.world.height - 260;
+
+  if (!this.isWalking()) {
+    this.anim = this.anim.replace("-wait", "-walk");
+  }
+
+  this.direction = this.setDirection();
+  this.check_animation();
 
 };
 
@@ -2388,6 +3285,7 @@ Pedestrian.prototype.update = function () {
       // console.log("not walking");
       this.currentIntent = this.ai.chooseIntent();
       this.goal = this.currentIntent.goal;
+      this.sprite_message = this.currentIntent && this.currentIntent.message ? this.currentIntent.message : "";
       this.direction = this.setDirection();
       this.anim = this.anim.replace("-wait", "-walk");
 
@@ -2405,12 +3303,14 @@ Pedestrian.prototype.update = function () {
 
 module.exports = Pedestrian;
 
-},{"./Brain":6}],13:[function(require,module,exports){
+},{"./Brain":7}],14:[function(require,module,exports){
 var Economy = function (game) {
   this.game = game;
   this.rebalanceIntervalMs = 12000;
   this.timeSinceRebalance = 0;
   this.lastRebalanceAt = 0;
+  this.cityInstability = 0;
+  this.disruption = {};
 
   this.venueOrder = ['bank', 'bakery', 'cafe', 'library', 'bookstore'];
   this.needVenueMap = {
@@ -2517,6 +3417,33 @@ Economy.prototype.createVenue = function (key, options) {
   return venue;
 };
 
+
+Economy.prototype.applyDisruptionSnapshot = function (venueStatus, instability) {
+  this.disruption = venueStatus || {};
+  this.cityInstability = Math.max(0, instability || 0);
+};
+
+Economy.prototype.getDisruptionForVenue = function (venueKey) {
+  return this.disruption && this.disruption[venueKey] ? this.disruption[venueKey] : null;
+};
+
+Economy.prototype.isVenueClosedForDisruption = function (venueKey) {
+  var disruption = this.getDisruptionForVenue(venueKey);
+  return !!(disruption && disruption.state === 'destroyed');
+};
+
+Economy.prototype.getOperationalCapacity = function (venue) {
+  var disruption = this.getDisruptionForVenue(venue.key);
+  var multiplier = disruption && disruption.capacityModifier !== undefined ? disruption.capacityModifier : 1;
+  return Math.max(0, Math.floor(venue.serviceCapacity * multiplier));
+};
+
+Economy.prototype.getOperationalInventory = function (venue) {
+  var disruption = this.getDisruptionForVenue(venue.key);
+  var multiplier = disruption && disruption.inventoryModifier !== undefined ? disruption.inventoryModifier : 1;
+  return Math.max(0, Math.floor(venue.inventory * multiplier));
+};
+
 Economy.prototype.resolveVenueForIntent = function (intent) {
   if (!intent) {
     return null;
@@ -2537,14 +3464,15 @@ Economy.prototype.computeDynamicPrice = function (venue) {
     shortageRatio = Math.max(0, Math.min(1, shortageRatio));
   }
   var pressure = Math.max(0, Math.min(2, venue.demandPressure));
-  var multiplier = 1 + (shortageRatio * 0.8) + (pressure * 0.45);
+  var disruptionTax = this.cityInstability * 0.35;
+  var multiplier = 1 + (shortageRatio * 0.8) + (pressure * 0.45) + disruptionTax;
   var minPrice = venue.basePrice * 0.6;
   var maxPrice = venue.basePrice * 2.5;
   return Math.max(minPrice, Math.min(maxPrice, venue.basePrice * multiplier));
 };
 
 Economy.prototype.hasCapacity = function (venue) {
-  return venue.cycleRequests <= venue.serviceCapacity;
+  return venue.cycleRequests <= this.getOperationalCapacity(venue);
 };
 
 Economy.prototype.hasInventory = function (venue, intent) {
@@ -2554,7 +3482,7 @@ Economy.prototype.hasInventory = function (venue, intent) {
   if (venue.inventoryMax <= 0) {
     return true;
   }
-  return venue.inventory > 0;
+  return this.getOperationalInventory(venue) > 0;
 };
 
 Economy.prototype.requestService = function (intent, actorProfile) {
@@ -2577,12 +3505,13 @@ Economy.prototype.requestService = function (intent, actorProfile) {
   venue.cycleRequests += 1;
   venue.dynamicPrice = this.computeDynamicPrice(venue);
 
-  quote.capacity = Math.max(0, venue.serviceCapacity - venue.cycleRequests);
-  quote.inventory = venue.inventory;
-  quote.open = venue.open;
+  quote.capacity = Math.max(0, this.getOperationalCapacity(venue) - venue.cycleRequests);
+  quote.inventory = this.getOperationalInventory(venue);
+  var disruption = this.getDisruptionForVenue(venueKey);
+  quote.open = venue.open && !(disruption && disruption.state === 'destroyed');
   quote.price = Math.ceil(venue.dynamicPrice);
 
-  if (!venue.open) {
+  if (!quote.open) {
     venue.cycleFailures += 1;
     venue.accounting.failedRequests += 1;
     quote.reason = 'closed';
@@ -2623,6 +3552,15 @@ Economy.prototype.applyExpense = function (venue, amount, expenseType) {
   if (expenseType && venue.accounting[expenseType] !== undefined) {
     venue.accounting[expenseType] += amount;
   }
+};
+
+Economy.prototype.registerUnmetNeed = function (needName, pressure) {
+  var venueKey = this.needVenueMap[needName];
+  if (!venueKey || !this.venues[venueKey]) {
+    return;
+  }
+  var venue = this.venues[venueKey];
+  venue.demandPressure = Math.min(2.5, venue.demandPressure + (pressure || 0.25));
 };
 
 Economy.prototype.settleTransaction = function (intent, actorProfile) {
@@ -2736,11 +3674,19 @@ Economy.prototype.rebalanceVenue = function (venue) {
     this.applyExpense(venue, baselinePayroll, 'payroll');
   }
 
+  var disruption = this.getDisruptionForVenue(venue.key);
+  var disruptionClosed = disruption && disruption.state === 'destroyed';
+
   if (venue.balance < -120 && venue.inventoryMax > 0) {
     venue.open = false;
-  } else if (venue.balance > -30) {
+  } else if (venue.balance > -30 && !disruptionClosed) {
     venue.open = true;
   }
+
+  var shortageStress = Math.max(0, shortageRatio - 0.2) * 1.8;
+  var disruptionStress = this.cityInstability * 0.5 + (disruption && disruption.state !== 'stable' ? 0.25 : 0);
+  var wageTarget = venue.wage * (1 + shortageStress + disruptionStress);
+  venue.wage = Math.max(5, Math.min(45, Math.floor((venue.wage * 0.75) + (wageTarget * 0.25))));
 
   venue.dynamicPrice = this.computeDynamicPrice(venue);
   venue.cycleRequests = 0;
@@ -2779,7 +3725,11 @@ Economy.prototype.getVenueSnapshot = function (key) {
     accounting: venue.accounting,
     balance: venue.balance,
     seats: venue.seats,
-    tellerSlots: venue.tellerSlots
+    tellerSlots: venue.tellerSlots,
+    operationalCapacity: this.getOperationalCapacity(venue),
+    operationalInventory: this.getOperationalInventory(venue),
+    instability: this.cityInstability,
+    disruption: this.getDisruptionForVenue(key)
   };
 };
 
