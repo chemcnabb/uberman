@@ -1,0 +1,54 @@
+{
+  "tierOrder": [
+    "physiological",
+    "safety",
+    "social",
+    "esteem",
+    "selfActualization"
+  ],
+  "tierUrgency": {
+    "physiological": 1.8,
+    "safety": 1.4,
+    "social": 1.15,
+    "esteem": 1.0,
+    "selfActualization": 0.85
+  },
+  "clamp": {
+    "min": 0,
+    "max": 100
+  },
+  "weightCurve": {
+    "baseline": 0.25,
+    "deficitExponent": 1.35
+  },
+  "defaultCurve": {
+    "decayPerTick": 0.08,
+    "passiveRecoveryPerTick": 0.0,
+    "recoveryOnResolve": 55
+  },
+  "needCurves": {
+    "WATER": { "decayPerTick": 0.18, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 82 },
+    "FOOD": { "decayPerTick": 0.15, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 78 },
+    "SECURITY": { "decayPerTick": 0.1, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 60 },
+    "MONEY": { "decayPerTick": 0.12, "passiveRecoveryPerTick": 0.0, "recoveryOnResolve": 70 },
+    "WARMTH": { "decayPerTick": 0.11, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 62 },
+    "FRIENDSHIP": { "decayPerTick": 0.09, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 58 },
+    "INTIMACY": { "decayPerTick": 0.08, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 56 },
+    "FAMILY": { "decayPerTick": 0.08, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 56 },
+    "CONFIDENCE": { "decayPerTick": 0.07, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 54 },
+    "ART": { "decayPerTick": 0.06, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 52 },
+    "EDUCATION": { "decayPerTick": 0.06, "passiveRecoveryPerTick": 0.01, "recoveryOnResolve": 52 }
+  },
+  "gating": {
+    "lowerTierDeficitThreshold": 0.35,
+    "unstableLowerTierMultiplier": 0.55,
+    "stableLowerTierBoost": 0.65
+  },
+  "cooldown": {
+    "lookbackTicks": 240,
+    "graceTicks": 45,
+    "penaltyPerRepeat": 0.35,
+    "recentVisitBonusCount": 1,
+    "historyLimit": 40
+  }
+}
