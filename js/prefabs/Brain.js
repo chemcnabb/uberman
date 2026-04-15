@@ -351,6 +351,7 @@ BRAIN.prototype.getCity = function () {
 };
 
 BRAIN.prototype.resolveVenueForNeed = function (needName) {
+  var excludedVenues = arguments.length > 1 && arguments[1] ? arguments[1] : {};
   var need = this.findNeedByName(needName);
   if (!need || !need.acts || need.acts.length === 0) {
     return null;
@@ -361,6 +362,9 @@ BRAIN.prototype.resolveVenueForNeed = function (needName) {
 
   for (var i = 0; i < need.acts.length; i++) {
     var venue = need.acts[i].toLowerCase();
+    if (excludedVenues[venue]) {
+      continue;
+    }
     var quote = economy ? economy.requestService({ type: 'FULFILL_NEED', door: venue, need: needName }, this.profile) : { ok: true };
     if (city && !city.isVenueOperational(venue)) {
       continue;
@@ -375,6 +379,9 @@ BRAIN.prototype.resolveVenueForNeed = function (needName) {
     var alternatives = city.getVenueAlternatives(primary, needName);
     for (var j = 0; j < alternatives.length; j++) {
       var alternative = alternatives[j];
+      if (excludedVenues[alternative]) {
+        continue;
+      }
       var altQuote = economy ? economy.requestService({ type: 'FULFILL_NEED', door: alternative, need: needName }, this.profile) : { ok: true };
       if (altQuote && altQuote.ok) {
         return { venue: alternative, quote: altQuote, rerouted: true };
@@ -421,6 +428,165 @@ BRAIN.prototype.findNeedByName = function (name) {
     }
   }
   return null;
+};
+
+BRAIN.prototype.toTitleCase = function (value) {
+  if (!value) {
+    return 'venue';
+  }
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+BRAIN.prototype.queueDeferredIntent = function (intent) {
+  this.profile.deferredIntent = intent || null;
+};
+
+BRAIN.prototype.consumeDeferredIntent = function () {
+  var deferred = this.profile.deferredIntent || null;
+  this.profile.deferredIntent = null;
+  return deferred;
+};
+
+BRAIN.prototype.applyFailureState = function (needName, pressure, emotion) {
+  if (!needName) {
+    return;
+  }
+  var need = this.findNeedByName(needName);
+  if (!need) {
+    return;
+  }
+  var amount = pressure || 2;
+  need.value += amount;
+  need.weight += amount * 0.08;
+  if (emotion) {
+    need.emotion = emotion;
+  }
+  this.applyUnmetNeedPressure(needName, amount * 0.15);
+};
+
+BRAIN.prototype.mapServiceStatus = function (intent, quote) {
+  if (!intent || intent.type === 'REST') {
+    return 'SUCCESS';
+  }
+  if (!quote) {
+    return 'DEFER';
+  }
+  if (quote.ok) {
+    if (intent.type === 'FULFILL_NEED' && this.profile.wallet < quote.price) {
+      return 'TOO_EXPENSIVE';
+    }
+    return 'SUCCESS';
+  }
+  if (quote.reason === 'capacity') {
+    return 'QUEUE';
+  }
+  if (quote.reason === 'stock') {
+    return 'OUT_OF_STOCK';
+  }
+  if (quote.reason === 'closed' || quote.reason === 'no_venue') {
+    return 'CLOSED';
+  }
+  return 'DEFER';
+};
+
+BRAIN.prototype.requestServiceStatus = function (intent) {
+  var economy = this.getEconomy();
+  if (!intent || intent.type === 'REST') {
+    return { status: 'SUCCESS', quote: { ok: true, reason: 'rested', price: 0 } };
+  }
+  if (!economy) {
+    return { status: 'SUCCESS', quote: { ok: true, reason: 'legacy', price: this.getNeedCost(intent.need) } };
+  }
+  var quote = economy.requestService(intent, this.profile);
+  intent.quote = quote;
+  return {
+    status: this.mapServiceStatus(intent, quote),
+    quote: quote
+  };
+};
+
+BRAIN.prototype.makeWorkIntentFromFailure = function (reasonText) {
+  var workIntent = this.buildIntent('WORK', this.profile.workplace, this.game.world.centerX, 'Need to earn first', 'MONEY');
+  workIntent.message = reasonText + ', taking a work shift';
+  return this.attachServiceQuote(workIntent);
+};
+
+BRAIN.prototype.makeNeedIntentFromRoute = function (needName, route, reasonText) {
+  var need = this.findNeedByName(needName);
+  var emotion = need ? need.emotion : 'Trying a different spot';
+  var intent = this.buildIntent('FULFILL_NEED', route.venue, this.game.world.centerX, emotion, needName);
+  intent.quote = route.quote;
+  intent.rerouted = true;
+  intent.message = reasonText + ', trying ' + route.venue;
+  return intent;
+};
+
+BRAIN.prototype.handleArrival = function (intent) {
+  if (!intent) {
+    return { nextIntent: this.chooseIntent(), waitMs: Phaser.Timer.SECOND * 4 };
+  }
+
+  var service = this.requestServiceStatus(intent);
+  var venueName = this.toTitleCase(intent.door);
+  var status = service.status;
+
+  if (status === 'SUCCESS') {
+    this.resolveIntent(intent);
+    return {
+      status: status,
+      waitMs: Phaser.Timer.SECOND * 4,
+      nextIntent: this.chooseIntent(),
+      bubbleMessage: intent.message
+    };
+  }
+
+  if (status === 'QUEUE') {
+    this.applyFailureState(intent.need, 1.5, 'Queue is long and patience is thinning');
+    var queueIntent = {
+      type: intent.type,
+      door: intent.door,
+      goal: intent.goal,
+      need: intent.need,
+      message: venueName + ' line is packed, waiting in queue',
+      queued: true
+    };
+    this.queueDeferredIntent(queueIntent);
+    return { status: status, waitMs: Phaser.Timer.SECOND * 6, bubbleMessage: queueIntent.message };
+  }
+
+  if ((status === 'CLOSED' || status === 'OUT_OF_STOCK') && intent.need) {
+    this.applyFailureState(intent.need, 2.5, 'Need is still unresolved after a failed stop');
+    var excluded = {};
+    if (intent.door) {
+      excluded[intent.door] = true;
+    }
+    var route = this.resolveVenueForNeed(intent.need, excluded);
+    var reasonMessage = status === 'CLOSED' ? venueName + ' closed' : venueName + ' out of stock';
+    if (route) {
+      var rerouteIntent = this.makeNeedIntentFromRoute(intent.need, route, reasonMessage);
+      this.queueDeferredIntent(rerouteIntent);
+      return { status: status, waitMs: Phaser.Timer.SECOND * 3, bubbleMessage: rerouteIntent.message };
+    }
+    var deferIntent = this.buildIntent('REST', null, this.profile.homeX, 'No alternatives, deferring for now', intent.need);
+    deferIntent.message = reasonMessage + ', deferring until later';
+    this.queueDeferredIntent(deferIntent);
+    return { status: 'DEFER', waitMs: Phaser.Timer.SECOND * 5, bubbleMessage: deferIntent.message };
+  }
+
+  if (status === 'TOO_EXPENSIVE') {
+    if (intent.need) {
+      this.applyFailureState(intent.need, 3, 'Prices spiked and the need remains urgent');
+    }
+    var workIntent = this.makeWorkIntentFromFailure(venueName + ' is too expensive');
+    this.queueDeferredIntent(workIntent);
+    return { status: status, waitMs: Phaser.Timer.SECOND * 2, bubbleMessage: workIntent.message };
+  }
+
+  if (intent.need) {
+    this.applyFailureState(intent.need, 2, 'Could not get service, holding the plan');
+  }
+  this.queueDeferredIntent(intent);
+  return { status: 'DEFER', waitMs: Phaser.Timer.SECOND * 5, bubbleMessage: 'Service failed, trying again soon' };
 };
 
 BRAIN.prototype.buildIntent = function (type, doorKey, fallbackX, emotion, needName) {
@@ -658,18 +824,23 @@ BRAIN.prototype.resolveIntent = function (intent) {
     var moneyNeed = this.findNeedByName('MONEY');
     if (moneyNeed && (!settlement || settlement.ok)) {
       moneyNeed.value = 0;
+      moneyNeed.emotion = "Wallet's breathing again after that shift";
     }
-    this.profile.fatigue = Math.min(100, this.profile.fatigue + 5);
+    if (!settlement || settlement.ok) {
+      this.profile.fatigue = Math.min(100, this.profile.fatigue + 5);
+    }
   }
 
   if (intent.type === 'FULFILL_NEED' && intent.need) {
     var need = this.findNeedByName(intent.need);
     if (need && (!settlement || settlement.ok)) {
       need.value = 0;
+      need.emotion = "That helped; the pressure eased for now";
       this.profile.fatigue = Math.max(0, this.profile.fatigue - 2);
     } else if (need && settlement && !settlement.ok) {
       need.value += 2;
       this.applyUnmetNeedPressure(intent.need, 2);
+      need.emotion = "Didn't get served; still chasing relief";
     }
     if (!economy && need) {
       var cost = this.getNeedCost(intent.need);

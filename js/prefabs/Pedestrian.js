@@ -82,9 +82,9 @@ Pedestrian.prototype.spriteMessage = function () {
     }
     message = this.distractionLine;
   } else if (this.isMoving) {
-    message = this.currentIntent && this.currentIntent.message ? this.currentIntent.message : this.ai.thoughts.needs[0].maslow[0].emotion;
+    message = this.sprite_message || (this.currentIntent && this.currentIntent.message ? this.currentIntent.message : this.ai.thoughts.needs[0].maslow[0].emotion);
   } else {
-    message = "Thinking...";
+    message = this.sprite_message || "Thinking...";
   }
 
   var walletText = " ($" + this.ai.profile.wallet + ")";
@@ -176,16 +176,21 @@ Pedestrian.prototype.updateDistractionState = function () {
   }
 };
 Pedestrian.prototype.removePedestrian = function (next, sprite) {
+  var arrival = sprite.ai.handleArrival(sprite.currentIntent);
+  if (arrival && arrival.bubbleMessage) {
+    sprite.sprite_message = arrival.bubbleMessage;
+  }
   sprite.visible = false;
-  sprite.ai.resolveIntent(sprite.currentIntent);
-  var timer = sprite.game.time.events.add(Phaser.Timer.SECOND*4, next, sprite);
+  var waitMs = arrival && arrival.waitMs ? arrival.waitMs : Phaser.Timer.SECOND*4;
+  var timer = sprite.game.time.events.add(waitMs, next, sprite);
 
 };
 
 Pedestrian.prototype.putBack = function () {
   this.visible = true;
-  this.currentIntent = this.ai.chooseIntent();
+  this.currentIntent = this.ai.consumeDeferredIntent() || this.ai.chooseIntent();
   this.goal = this.currentIntent.goal;
+  this.lastMessage = null;
 
 };
 
@@ -380,6 +385,7 @@ Pedestrian.prototype.update = function () {
       // console.log("not walking");
       this.currentIntent = this.ai.chooseIntent();
       this.goal = this.currentIntent.goal;
+      this.sprite_message = this.currentIntent && this.currentIntent.message ? this.currentIntent.message : "";
       this.direction = this.setDirection();
       this.anim = this.anim.replace("-wait", "-walk");
 
