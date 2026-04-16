@@ -390,7 +390,7 @@ Pedestrian.prototype.movement = function () {
 
 
 Pedestrian.prototype.goalAchieved = function () {
-  return this.x === this.goal;
+  return Math.abs(this.x - this.goal) <= 2;
 };
 
 

@@ -1,6 +1,7 @@
 DayCycle = function (game, dayLength) {
   this.game = game;
   this.dayLength = dayLength;
+  this.phaseLength = Math.max(1000, Math.floor(dayLength / 2));
   this.shading = false;
   this.sunSprite = false;
   this.moonSprite = false;
@@ -27,13 +28,13 @@ DayCycle.prototype.sunrise = function (sprite) {
 
   sprite.position.x = this.game.width - (this.game.width / 4);
 
-  this.sunTween = this.game.add.tween(sprite).to({y: -250}, this.dayLength, null, true);
+  this.sunTween = this.game.add.tween(sprite).to({y: -250}, this.phaseLength, null, true);
   this.sunTween.onComplete.add(this.sunset, this);
 
   if (this.shading) {
     var that = this;
     this.shading.forEach(function (sprite) {
-      that.tweenTint(sprite.sprite, sprite.from, sprite.to, that.dayLength);
+      that.tweenTint(sprite.sprite, sprite.from, sprite.to, that.phaseLength);
     });
   }
 
@@ -43,13 +44,13 @@ DayCycle.prototype.sunset = function (sprite) {
 
   sprite.position.x = 50;
 
-  this.sunTween = this.game.add.tween(sprite).to({y: this.game.world.height}, this.dayLength, null, true);
+  this.sunTween = this.game.add.tween(sprite).to({y: this.game.world.height}, this.phaseLength, null, true);
   this.sunTween.onComplete.add(this.sunrise, this);
 
   if (this.shading) {
     var that = this;
     this.shading.forEach(function (sprite) {
-      that.tweenTint(sprite.sprite, sprite.to, sprite.from, that.dayLength);
+      that.tweenTint(sprite.sprite, sprite.to, sprite.from, that.phaseLength);
     });
   }
 
@@ -59,7 +60,7 @@ DayCycle.prototype.moonrise = function (sprite) {
 
   sprite.position.x = this.game.width - (this.game.width / 4);
 
-  this.moonTween = this.game.add.tween(sprite).to({y: -350}, this.dayLength, null, true);
+  this.moonTween = this.game.add.tween(sprite).to({y: -350}, this.phaseLength, null, true);
   this.moonTween.onComplete.add(this.moonset, this);
 };
 
@@ -67,7 +68,7 @@ DayCycle.prototype.moonset = function (sprite) {
 
   sprite.position.x = 50;
 
-  this.moonTween = this.game.add.tween(sprite).to({y: this.game.world.height}, this.dayLength, null, true);
+  this.moonTween = this.game.add.tween(sprite).to({y: this.game.world.height}, this.phaseLength, null, true);
   this.moonTween.onComplete.add(this.moonrise, this);
 };
 
