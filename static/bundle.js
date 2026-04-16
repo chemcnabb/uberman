@@ -1285,14 +1285,55 @@ BRAIN.prototype.handleArrival = function (intent) {
   return { status: 'DEFER', waitMs: Phaser.Timer.SECOND * 5, bubbleMessage: 'Service failed, trying again soon' };
 };
 
-BRAIN.prototype.buildIntent = function (type, doorKey, fallbackX, emotion, needName) {
-  var goalX = fallbackX;
-  if (doorKey && this.game.doors[doorKey]) {
-    goalX = this.game.doors[doorKey].centerX;
+BRAIN.prototype.getClosestDoorKey = function (fallbackX) {
+  var doors = this.game && this.game.doors ? this.game.doors : null;
+  if (!doors) {
+    return null;
   }
+
+  var keys = Object.keys(doors);
+  if (!keys.length) {
+    return null;
+  }
+
+  var anchorX = fallbackX !== undefined && fallbackX !== null ? fallbackX : this.game.world.centerX;
+  var closestKey = keys[0];
+  var closestDistance = Math.abs((doors[closestKey] && doors[closestKey].centerX ? doors[closestKey].centerX : anchorX) - anchorX);
+
+  for (var i = 1; i < keys.length; i++) {
+    var key = keys[i];
+    var door = doors[key];
+    if (!door) {
+      continue;
+    }
+    var distance = Math.abs(door.centerX - anchorX);
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestKey = key;
+    }
+  }
+
+  return closestKey;
+};
+
+BRAIN.prototype.resolveIntentDoor = function (doorKey, fallbackX) {
+  if (doorKey && this.game.doors[doorKey]) {
+    return doorKey;
+  }
+  return this.getClosestDoorKey(fallbackX);
+};
+
+BRAIN.prototype.buildIntent = function (type, doorKey, fallbackX, emotion, needName) {
+  var resolvedDoor = this.resolveIntentDoor(doorKey, fallbackX);
+  var goalX = fallbackX;
+
+  if (resolvedDoor && this.game.doors[resolvedDoor]) {
+    goalX = this.game.doors[resolvedDoor].centerX;
+  }
+
   return {
     type: type,
-    door: doorKey,
+    door: resolvedDoor,
     goal: goalX,
     message: emotion,
     need: needName
@@ -2240,6 +2281,7 @@ module.exports = CITY;
 DayCycle = function (game, dayLength) {
   this.game = game;
   this.dayLength = dayLength;
+  this.phaseLength = Math.max(1000, Math.floor(dayLength / 2));
   this.shading = false;
   this.sunSprite = false;
   this.moonSprite = false;
@@ -2266,13 +2308,13 @@ DayCycle.prototype.sunrise = function (sprite) {
 
   sprite.position.x = this.game.width - (this.game.width / 4);
 
-  this.sunTween = this.game.add.tween(sprite).to({y: -250}, this.dayLength, null, true);
+  this.sunTween = this.game.add.tween(sprite).to({y: -250}, this.phaseLength, null, true);
   this.sunTween.onComplete.add(this.sunset, this);
 
   if (this.shading) {
     var that = this;
     this.shading.forEach(function (sprite) {
-      that.tweenTint(sprite.sprite, sprite.from, sprite.to, that.dayLength);
+      that.tweenTint(sprite.sprite, sprite.from, sprite.to, that.phaseLength);
     });
   }
 
@@ -2282,13 +2324,13 @@ DayCycle.prototype.sunset = function (sprite) {
 
   sprite.position.x = 50;
 
-  this.sunTween = this.game.add.tween(sprite).to({y: this.game.world.height}, this.dayLength, null, true);
+  this.sunTween = this.game.add.tween(sprite).to({y: this.game.world.height}, this.phaseLength, null, true);
   this.sunTween.onComplete.add(this.sunrise, this);
 
   if (this.shading) {
     var that = this;
     this.shading.forEach(function (sprite) {
-      that.tweenTint(sprite.sprite, sprite.to, sprite.from, that.dayLength);
+      that.tweenTint(sprite.sprite, sprite.to, sprite.from, that.phaseLength);
     });
   }
 
@@ -2298,7 +2340,7 @@ DayCycle.prototype.moonrise = function (sprite) {
 
   sprite.position.x = this.game.width - (this.game.width / 4);
 
-  this.moonTween = this.game.add.tween(sprite).to({y: -350}, this.dayLength, null, true);
+  this.moonTween = this.game.add.tween(sprite).to({y: -350}, this.phaseLength, null, true);
   this.moonTween.onComplete.add(this.moonset, this);
 };
 
@@ -2306,7 +2348,7 @@ DayCycle.prototype.moonset = function (sprite) {
 
   sprite.position.x = 50;
 
-  this.moonTween = this.game.add.tween(sprite).to({y: this.game.world.height}, this.dayLength, null, true);
+  this.moonTween = this.game.add.tween(sprite).to({y: this.game.world.height}, this.phaseLength, null, true);
   this.moonTween.onComplete.add(this.moonrise, this);
 };
 
@@ -2754,25 +2796,12 @@ HUD = function (game,  x, y) {
   this.cameraOffset.setTo(162, 100);
   this.damage = 0;
 
-  var clock = this.game.add.bitmapText(this.game.width/2-55, 50, 'digits', "", 62);
+  this.clock = this.game.add.bitmapText(this.game.width/2-55, 50, 'digits', "", 62);
 
   //clock.anchor.setTo(0.5, 0.5);
-  clock.fixedToCamera = true;
-  clock.align = "center";
-  //console.log(clock);
-  var timeValue = {};
-  timeValue.time = 0;
-  this.timeTween = this.game.add.tween(timeValue).to({time:  this.game.dayLength}, this.game.dayLength);
-
-  this.timeTween.onUpdateCallback(function() {
-
-
-    clock.text = (parseInt(timeValue.time / 1000 / 60 )%12 + ":" + parseInt(timeValue.time / 1000 % 60).toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false}));
-  });
-  this.timeTween.start();
-  //this.clockTween.onComplete.add(this.sunset, this);
-
-  //this.clock.bringToTop();
+  this.clock.fixedToCamera = true;
+  this.clock.align = "center";
+  this.updateClock();
 
   this.uber_disk = this.game.add.sprite(0,0, 'uber_disk');
   this.uber_disk.anchor.setTo(0.5, 0.5);
@@ -2797,6 +2826,20 @@ HUD = function (game,  x, y) {
 
 HUD.prototype = Object.create(Phaser.Sprite.prototype);
 HUD.prototype.constructor = HUD;
+
+
+HUD.prototype.updateClock = function () {
+  var dayLength = this.game.dayLength || (60000 * 5);
+  var elapsed = this.game.time.now % dayLength;
+  var totalMinutes = Math.floor((elapsed / dayLength) * (24 * 60));
+  var hours24 = Math.floor(totalMinutes / 60) % 24;
+  var minutes = totalMinutes % 60;
+  var displayHour = hours24 % 12;
+  if (displayHour === 0) {
+    displayHour = 12;
+  }
+  this.clock.text = displayHour + ':' + minutes.toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false});
+};
 
 HUD.prototype.preload = function () {
   this.game.time.advancedTiming = true;
@@ -2832,9 +2875,7 @@ HUD.prototype.animateDamage = function() {
 };
 HUD.prototype.update = function() {
   this.switchState();
-
-
-
+  this.updateClock();
 
   // ensure you clear the context each time you update it or the bar will draw on top of itself
   this.bar.context.clearRect(0, 0, this.bar.width, this.bar.height);
@@ -3258,7 +3299,7 @@ Pedestrian.prototype.movement = function () {
 
 
 Pedestrian.prototype.goalAchieved = function () {
-  return this.x === this.goal;
+  return Math.abs(this.x - this.goal) <= 2;
 };
 
 

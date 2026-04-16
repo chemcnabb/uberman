@@ -751,14 +751,55 @@ BRAIN.prototype.handleArrival = function (intent) {
   return { status: 'DEFER', waitMs: Phaser.Timer.SECOND * 5, bubbleMessage: 'Service failed, trying again soon' };
 };
 
-BRAIN.prototype.buildIntent = function (type, doorKey, fallbackX, emotion, needName) {
-  var goalX = fallbackX;
-  if (doorKey && this.game.doors[doorKey]) {
-    goalX = this.game.doors[doorKey].centerX;
+BRAIN.prototype.getClosestDoorKey = function (fallbackX) {
+  var doors = this.game && this.game.doors ? this.game.doors : null;
+  if (!doors) {
+    return null;
   }
+
+  var keys = Object.keys(doors);
+  if (!keys.length) {
+    return null;
+  }
+
+  var anchorX = fallbackX !== undefined && fallbackX !== null ? fallbackX : this.game.world.centerX;
+  var closestKey = keys[0];
+  var closestDistance = Math.abs((doors[closestKey] && doors[closestKey].centerX ? doors[closestKey].centerX : anchorX) - anchorX);
+
+  for (var i = 1; i < keys.length; i++) {
+    var key = keys[i];
+    var door = doors[key];
+    if (!door) {
+      continue;
+    }
+    var distance = Math.abs(door.centerX - anchorX);
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestKey = key;
+    }
+  }
+
+  return closestKey;
+};
+
+BRAIN.prototype.resolveIntentDoor = function (doorKey, fallbackX) {
+  if (doorKey && this.game.doors[doorKey]) {
+    return doorKey;
+  }
+  return this.getClosestDoorKey(fallbackX);
+};
+
+BRAIN.prototype.buildIntent = function (type, doorKey, fallbackX, emotion, needName) {
+  var resolvedDoor = this.resolveIntentDoor(doorKey, fallbackX);
+  var goalX = fallbackX;
+
+  if (resolvedDoor && this.game.doors[resolvedDoor]) {
+    goalX = this.game.doors[resolvedDoor].centerX;
+  }
+
   return {
     type: type,
-    door: doorKey,
+    door: resolvedDoor,
     goal: goalX,
     message: emotion,
     need: needName
