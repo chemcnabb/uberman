@@ -17,9 +17,12 @@ Pedestrian = function (game, y, sprite) {
   this.goal = this.currentIntent.goal;
 
   this.messageContainer = null;
+  this.respawnTimer = null;
+  this.respawnPosition = null;
 
   this.direction = this.setDirection();
   this.sprite_message = "";
+  this.currentAnimationName = null;
 
   this.animations.add("oldman-wait", [14], 6, true);
   this.animations.add("oldman-walk", [0, 1, 2, 3, 4, 5], 6, true);
@@ -176,6 +179,12 @@ Pedestrian.prototype.updateDistractionState = function () {
   }
 };
 Pedestrian.prototype.removePedestrian = function (next, sprite) {
+  if (!sprite.alive || sprite.isDespawning) {
+    return;
+  }
+  sprite.isDespawning = true;
+  sprite.respawnPosition = { x: sprite.x, y: sprite.y };
+
   var arrival = sprite.ai.handleArrival(sprite.currentIntent);
   if (arrival && arrival.bubbleMessage) {
     sprite.sprite_message = arrival.bubbleMessage;
@@ -197,25 +206,30 @@ Pedestrian.prototype.removePedestrian = function (next, sprite) {
   sprite.kill();
 
   var waitMs = arrival && arrival.waitMs ? arrival.waitMs : Phaser.Timer.SECOND * 4;
-  sprite.game.time.events.add(waitMs, next, sprite);
+  if (sprite.respawnTimer) {
+    sprite.game.time.events.remove(sprite.respawnTimer);
+  }
+  sprite.respawnTimer = sprite.game.time.events.add(waitMs, next, sprite);
 
 };
 
 Pedestrian.prototype.putBack = function () {
-  var spawnPadding = 200;
   this.revive();
 
   this.currentIntent = this.ai.consumeDeferredIntent() || this.ai.chooseIntent();
   this.goal = this.currentIntent.goal;
   this.lastMessage = null;
+  this.isDespawning = false;
   this.isDistracted = false;
   this.distractionLine = null;
 
-  this.x = (this.goal < this.game.world.centerX) ?
-    this.game.world.width + this.game.rnd.integerInRange(0, spawnPadding) :
-    this.game.world.x - this.game.rnd.integerInRange(0, spawnPadding);
-
-  this.y = this.game.world.height - 260;
+  if (this.respawnPosition) {
+    this.x = this.respawnPosition.x;
+    this.y = this.respawnPosition.y;
+    this.respawnPosition = null;
+  } else {
+    this.y = this.game.world.height - 260;
+  }
 
   if (!this.isWalking()) {
     this.anim = this.anim.replace("-wait", "-walk");
@@ -323,6 +337,10 @@ Pedestrian.prototype.isWalking = function() {
 
 Pedestrian.prototype.check_animation = function() {
   // console.log("check animation", this.anim.indexOf("-walk"));
+  if (this.move_tween) {
+    this.move_tween.stop();
+  }
+
   this.move_tween = this.game.add.tween(this);
   var delay = this.game.rnd.integerInRange(1000, 6000);
   this.brain();
@@ -379,7 +397,10 @@ Pedestrian.prototype.movement = function () {
 
 // console.log("movement");
   this.direction = this.setDirection();
-  this.animations.play(this.anim);
+  if (this.currentAnimationName !== this.anim || !this.animations.currentAnim || !this.animations.currentAnim.isPlaying) {
+    this.animations.play(this.anim);
+    this.currentAnimationName = this.anim;
+  }
   this.loaded = true;
 };
 
@@ -401,6 +422,10 @@ Pedestrian.prototype.goalAchieved = function () {
 
 Pedestrian.prototype.update = function () {
 
+  if (!this.alive) {
+    return;
+  }
+
   this.updateDistractionState();
   this.spriteMessage();
 
@@ -409,7 +434,7 @@ Pedestrian.prototype.update = function () {
   }
 
   this.ai.life();
-  if(this.goalAchieved()){
+  if(this.goalAchieved() && this.isWalking()){
     // console.log("arrived at goal");
     this.doWait();
   }else{
