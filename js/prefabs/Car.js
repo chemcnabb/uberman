@@ -1,4 +1,4 @@
-Car = function (game, x, y, frame, direction) {
+var Car = function (game, x, y, frame, direction) {
   Phaser.Sprite.call(this, game, x, y, frame, 0);
   this.direction = direction;
   this.game.physics.enable(this, Phaser.Physics.ARCADE);
@@ -25,16 +25,16 @@ Car.prototype.constructor = Car;
 Car.prototype.start = function () {
   var goal;
 
-  if(this.direction=="LEFT"){
-    goal = this.game.world.x-this.width;
+  if (this.direction === "LEFT") {
+    goal = this.game.world.x - this.width;
     this.scale.x = -1;
-  }else{
-    goal = this.game.world.width+this.width;
+  } else {
+    goal = this.game.world.width + this.width;
     this.scale.x = 1;
   }
-  this.car_tween.to({ x: goal}, this.game.rnd.integerInRange(5000,7000)).loop(true);
+  this.car_tween.to({ x: goal }, this.game.rnd.integerInRange(5000, 7000)).loop(true);
 
-  this.car_tween.delay(this.game.rnd.integerInRange(100,10000));
+  this.car_tween.delay(this.game.rnd.integerInRange(100, 10000));
 
   this.car_tween.start();
   this.loaded = true;

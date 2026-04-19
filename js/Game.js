@@ -12,6 +12,8 @@ var Economy = require('./sim/Economy');
 Uberman.Game = function (game) {
 
 
+  this.platforms = null;
+  this.cursors = null;
 };
 
 Uberman.Game.prototype = {
@@ -103,11 +105,11 @@ Uberman.Game.prototype = {
   },
   addGround: function () {
 
-    platforms = this.game.add.group();
+    this.platforms = this.game.add.group();
 
-    platforms.enableBody = true;
+    this.platforms.enableBody = true;
 
-    var ground = platforms.create(0, this.game.world.height - 209, 'ground');
+    var ground = this.platforms.create(0, this.game.world.height - 209, 'ground');
 
     ground.scale.setTo(2, 2);
 
@@ -163,17 +165,6 @@ Uberman.Game.prototype = {
 
     });
 
-    for (var grp_car in this.cars.children) {
-
-      if (this.cars.hasOwnProperty(grp_car)) {
-
-        this.game.add.existing(grp_car);
-
-      }
-
-    }
-
-
   },
   create: function () {
 
@@ -213,13 +204,13 @@ Uberman.Game.prototype = {
 
     this.game.add.existing(this.game.hud);
 
-    cursors = this.game.input.keyboard.createCursorKeys();
+    this.cursors = this.game.input.keyboard.createCursorKeys();
 
   },
 
   update: function () {
 
-    this.game.physics.arcade.collide(this.game.player, platforms);
+    this.game.physics.arcade.collide(this.game.player, this.platforms);
     if (this.game.economy) {
       this.game.economy.update(this.game.time.elapsedMS || 16);
     }
