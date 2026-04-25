@@ -19,6 +19,7 @@ Pedestrian = function (game, y, sprite) {
   this.messageContainer = null;
   this.respawnTimer = null;
   this.respawnPosition = null;
+  this.lastKnownPosition = { x: this.x, y: this.y };
 
   this.direction = this.setDirection();
   this.sprite_message = "";
@@ -183,7 +184,8 @@ Pedestrian.prototype.removePedestrian = function (next, sprite) {
     return;
   }
   sprite.isDespawning = true;
-  sprite.respawnPosition = { x: sprite.x, y: sprite.y };
+  sprite.lastKnownPosition = { x: sprite.x, y: sprite.y };
+  sprite.respawnPosition = { x: sprite.lastKnownPosition.x, y: sprite.lastKnownPosition.y };
 
   var arrival = sprite.ai.handleArrival(sprite.currentIntent);
   if (arrival && arrival.bubbleMessage) {
@@ -223,13 +225,17 @@ Pedestrian.prototype.putBack = function () {
   this.isDistracted = false;
   this.distractionLine = null;
 
-  if (this.respawnPosition) {
-    this.x = this.respawnPosition.x;
-    this.y = this.respawnPosition.y;
-    this.respawnPosition = null;
+  var returnPosition = this.respawnPosition || this.lastKnownPosition;
+
+  if (returnPosition) {
+    this.x = returnPosition.x;
+    this.y = returnPosition.y;
   } else {
     this.y = this.game.world.height - 260;
   }
+
+  this.respawnPosition = null;
+  this.lastKnownPosition = { x: this.x, y: this.y };
 
   if (!this.isWalking()) {
     this.anim = this.anim.replace("-wait", "-walk");
@@ -425,6 +431,8 @@ Pedestrian.prototype.update = function () {
   if (!this.alive) {
     return;
   }
+
+  this.lastKnownPosition = { x: this.x, y: this.y };
 
   this.updateDistractionState();
   this.spriteMessage();
